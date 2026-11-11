@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>StickStrike — Game Bắn Súng Người Que</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="game-wrap">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <!-- Hàng súng — thanh riêng DƯỚI canvas, không đè lên map -->
+    <div id="wbar" style="display:none"></div>
+
+    <!-- ═══ MENU CHÍNH ═══ -->
+    <div id="menu" class="screen">
+      <div class="panel menu-panel">
+        <h1 class="title">STICK<span>STRIKE</span></h1>
+        <p class="tagline">Bắn súng người que trong khoang phi thuyền 🚀</p>
+        <div class="menu-cols">
+          <div class="menu-left">
+            <button id="btnWave" class="btn big">🌊 SINH TỔN<small>Wave quái vật · cửa hàng · đè kỷ lục</small></button>
+            <button id="btnDM" class="btn big">🤖 DEATHMATCH<small>đội nhóm cùng bot · tuỳ chọn số người &amp; điểm thắng</small></button>
+            <button id="btnTips" class="btn">💡 MẸO CHƠI<small>điều khiển · đạn giới hạn · mẹo bazoka</small></button>
+            <div class="map-pick">
+              <button id="mapPrev" class="btn small">‹</button>
+              <span id="mapName">📦 Buồng chứa hàng</span>
+              <button id="mapNext" class="btn small">›</button>
+            </div>
+            <div class="map-pick">
+              <button id="dmSizeMinus" class="btn small">−</button>
+              <span id="dmSizeLabel">👥 5 người/đội</span>
+              <button id="dmSizePlus" class="btn small">+</button>
+            </div>
+            <div class="map-pick">
+              <button id="dmKillsMinus" class="btn small">−</button>
+              <span id="dmKillsLabel">🏁 30 kill thắng</span>
+              <button id="dmKillsPlus" class="btn small">+</button>
+            </div>
+            <div class="customize">
+              <span>Áo của bạn:</span>
+              <div id="colorDots"></div>
+              <button id="hatBtn" class="btn small">🎩 Mũ: cap</button>
+            </div>
+            <div id="records" class="records">🏆 Kỷ lục: Wave 0 · 0 điểm</div>
+          </div>
+          <div class="menu-right">
+            <canvas id="preview" width="200" height="220"></canvas>
+            <div class="controls-hint">A/D chạy · W nhảy x2 · S ngồi<br>Chuột ngắm bắn · R nạp · G lụm súng</div>
+          </div>
+        </div>
+        <p class="credit">Esc: tạm dừng · T: đường ngắm mờ · M: tắt tiếng — làm với ❤️ để giải trí sau giờ làm</p>
+      </div>
+    </div>
+
+    <!-- ═══ MẸO CHƠI ═══ -->
+    <div id="tips" class="screen hidden">
+      <div class="panel tips-panel">
+        <h2>💡 MẸO CHƠI</h2>
+        <div class="tips-body">
+          <div class="tip-block">
+            <h3>🎮 Điều khiển</h3>
+            <p>A / D chạy · W hoặc Space nhảy (nhấn 2 lần = nhảy đôi) · S ngồi thấp ·
+            Chuột ngắm + bắn · R nạp đạn · G lụm súng/hộp đạn · B cửa hàng (giữa wave) ·
+            1–0 / lăn chuột đổi súng · T đường ngắm · M tắt tiếng · Esc tạm dừng</p>
+          </div>
+          <div class="tip-block">
+            <h3>📦 Đạn — không bắn hoài được đâu!</h3>
+            <p>Súng <b>TẶNG lúc đầu</b> và <b>MUA ở cửa hàng</b>: đạn vô hạn.
+            Súng <b>LỤM trên map</b>: chỉ có đúng <b>1 băng</b> — hết là khô!
+            Lụm lại chính khẩu đó: đạn <b>đầy lại + 1 băng dự trữ</b>.
+            Hộp đạn 📦 cho lượng random <b>50%–100% băng</b> (phải cầm đúng khẩu đó).
+            Dự trữ tối đa <b>2 băng</b>. Súng lục luôn đạn ∞ — cứu cánh khi khô đạn.</p>
+          </div>
+          <div class="tip-block">
+            <h3>🚀 Mẹo bazoka phóng lựu</h3>
+            <p>Nổ trúng THẲNG người: sát thương kinh hoàng.
+            Nổ <b>quẹt tường</b> (địch nấp sau tường): vẫn sóng xung kích — mất <b>1/2 máu</b>.
+            Nổ <b>ngay dưới sàn mỏng 1 ô</b> đang đứng: dù đạn KHÔNG xuyên sàn, rung
+            sập vẫn khiến địch mất <b>75% máu</b> — bắn sàn dưới chân là chiêu bự!</p>
+          </div>
+          <div class="tip-block">
+            <h3>⚡ Modifier giữa wave</h3>
+            <p>Dọn sạch wave xong: chọn <b>1 trong 3</b> buff cho wave tới bằng phím
+            <b>1 / 2 / 3</b> (không chọn sẽ tự random): hoả lực +25%, bắn nhanh,
+            đạn xuyên, tiền ×2, hồi đầy máu, giáp nẹp −30% sát thương nhận.</p>
+          </div>
+          <div class="tip-block">
+            <h3>👹 Nhận mặt quái</h3>
+            <p><b>Tank giáp</b> (wave 3+): đạn trúng ngực chỉ 20% sát thương —
+            đi vòng <b>bắn LƯNG</b> hoặc headshot! <b>Kamikaze</b> (wave 4+): lao nhanh
+            nhấp nháy đỏ → nổ 45 dmg vùng; bị bắn chết CŨNG NỔ — bắn từ xa kẻo vạ.
+            <b>Sniper</b> (wave 5+): tia đỏ ngắm 0.7s rồi bắn 25 dmg — thấy tia đỏ là né!</p>
+          </div>
+          <div class="tip-block">
+            <h3>🎯 Nấp &amp; sníp</h3>
+            <p>Bậc thềm 1 chiều + cây chặn ĐẠN và che TẦM NHIN — đứng sau là kín.
+            Headshot ×2 sát thương + khựng hình. RAIL xuyên nhiều bia,
+            sniper đạn to — nấp xa bắn tỉa là số 1.</p>
+          </div>
+          <div class="tip-block">
+            <h3>🤖 Bot có tính cách</h3>
+            <p>Nhìn tên trên thanh máu: <b>Cân bằng</b> chơi chuẩn, <b>Hung hăng</b> áp sát liều,
+            <b>Núp bắn</b> giữ xa bắn tỉa, <b>Vòng sườn</b> lác ra sau lưng bạn — canh chừng!</p>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button id="btnTipsBack" class="btn">‹ Về menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAUSE ═══ -->
+    <div id="pause" class="screen hidden">
+      <div class="panel">
+        <h2>⏸ TẠM DỪNG</h2>
+        <p class="stats">Đang uống nước ngọt giữa trận á?</p>
+        <div class="btn-row">
+          <button id="btnResume" class="btn">▶ Chơi tiếp</button>
+          <button id="btnQuit" class="btn danger">🏠 Về menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GAME OVER (wave) ═══ -->
+    <div id="gameover" class="screen hidden">
+      <div class="panel">
+        <h2 class="go-title" id="goTitle">💀 BẠN ĐÃ GỤC</h2>
+        <p class="stats" id="goStats"></p>
+        <div class="btn-row">
+          <button id="btnRetryWave" class="btn">🔁 Đánh lại</button>
+          <button id="btnGoMenu1" class="btn danger">🏠 Về menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ KẾT THÚC TRẬN (deathmatch) ═══ -->
+    <div id="matchend" class="screen hidden">
+      <div class="panel">
+        <h2 id="meTitle" class="win-title">🏆 THẮNG!</h2>
+        <p class="stats" id="meStats"></p>
+        <div class="btn-row">
+          <button id="btnRematch" class="btn">⚔️ Đấu lại</button>
+          <button id="btnGoMenu2" class="btn danger">🏠 Về menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thứ tự nạp: config → engine → world → game → entities → ui → main -->
+  <script src="js/config.js" defer></script>
+  <script src="js/engine/input.js" defer></script>
+  <script src="js/engine/camera.js" defer></script>
+  <script src="js/engine/gameLoop.js" defer></script>
+  <script src="js/engine/time.js" defer></script>
+  <script src="js/engine/audio.js" defer></script>
+  <script src="js/world/maps.js" defer></script>
+  <script src="js/world/level.js" defer></script>
+  <script src="js/world/physics.js" defer></script>
+  <script src="js/game/combatants.js" defer></script>
+  <script src="js/entities/stickman.js" defer></script>
+  <script src="js/weapons/weapons.js" defer></script>
+  <script src="js/entities/bullet.js" defer></script>
+  <script src="js/entities/particles.js" defer></script>
+  <script src="js/entities/monster.js" defer></script>
+  <script src="js/entities/bot.js" defer></script>
+  <script src="js/game/wave.js" defer></script>
+  <script src="js/game/match.js" defer></script>
+  <script src="js/game/pickups.js" defer></script>
+  <script src="js/game/trees.js" defer></script>
+  <script src="js/entities/player.js" defer></script>
+  <script src="js/ui/shop.js" defer></script>
+  <script src="js/ui/menu.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

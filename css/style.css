@@ -1,0 +1,205 @@
+/* StickStrike — giao diện toàn màn + các panel DOM (menu, pause, kết quả) */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #04060b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.game-wrap {
+  position: relative;
+  /* trừ thêm ~70px cho thanh hàng súng dưới canvas — tổng không vượt màn hình */
+  width: min(100vw, calc((100vh - 70px) * (16 / 9)));
+}
+
+canvas#game {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 0 80px rgba(64, 130, 255, 0.18);
+  cursor: none; /* game tự vẽ tâm ngắm */
+}
+
+/* ── Hàng súng (DOM) — nằm dưới canvas, không che map ── */
+#wbar {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  background: linear-gradient(180deg, rgba(10, 18, 32, 0.95), rgba(6, 10, 18, 0.95));
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-top: 8px;
+  user-select: none;
+}
+.wslot {
+  position: relative;
+  width: 68px;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.wslot:hover { border-color: rgba(34, 211, 238, 0.5); }
+.wslot.active {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.16);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+}
+.wslot.locked { opacity: 0.5; cursor: default; }
+.wslot .num {
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  font: 600 9px Consolas, monospace;
+  color: rgba(160, 200, 240, 0.6);
+}
+.wslot .nm { font: 700 13px "Segoe UI", system-ui, sans-serif; color: #dfe9fb; }
+.wslot .ammo { font: 600 9px Consolas, monospace; color: rgba(120, 220, 160, 0.9); }
+.wslot.locked .nm { color: rgba(255, 224, 102, 0.85); }
+.wslot.locked .ammo { color: rgba(255, 224, 102, 0.5); }
+.winfo {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 10px;
+  min-width: 150px;
+  text-align: right;
+}
+.winfo .wname { font: 600 14px "Segoe UI", system-ui, sans-serif; color: #e8fdff; }
+.winfo .wammo { font: 700 22px Consolas, monospace; color: #7df3ff; }
+
+/* ── Các màn hình phủ lên canvas ── */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 6, 12, 0.78);
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+.screen.hidden { display: none; }
+
+.panel {
+  background: linear-gradient(160deg, rgba(16, 26, 44, 0.97), rgba(8, 13, 24, 0.97));
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 14px;
+  padding: 28px 36px;
+  color: #dfe9fb;
+  text-align: center;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+  animation: pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+  max-width: 640px;
+}
+@keyframes pop {
+  from { transform: scale(0.85) translateY(16px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.title {
+  margin: 0;
+  font-size: 44px;
+  letter-spacing: 6px;
+  color: #e8fdff;
+  text-shadow: 0 0 30px rgba(34, 211, 238, 0.55);
+}
+.title span { color: #22d3ee; }
+.tagline { margin: 4px 0 22px; color: rgba(160, 180, 220, 0.75); font-size: 14px; }
+
+.menu-cols { display: flex; gap: 28px; text-align: left; }
+.menu-left { flex: 1.2; display: flex; flex-direction: column; gap: 12px; }
+.menu-right { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#preview { background: rgba(4, 8, 16, 0.7); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); }
+
+.btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.12);
+  color: #e8fdff;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 16px;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: rgba(34, 211, 238, 0.3); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(34,211,238,0.25); }
+.btn:active { transform: translateY(0); }
+.btn.big { font-size: 19px; font-weight: 700; padding: 13px 18px; display: flex; flex-direction: column; gap: 2px; }
+.btn.big small { font-size: 12px; font-weight: 400; color: rgba(190, 220, 240, 0.7); }
+.btn.small { font-size: 13px; padding: 6px 12px; }
+.btn.danger { border-color: rgba(244, 63, 94, 0.6); background: rgba(244, 63, 94, 0.14); }
+.btn.danger:hover { background: rgba(244, 63, 94, 0.3); }
+
+.map-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  font-size: 15px;
+  color: #a8c8e8;
+}
+
+.customize {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  font-size: 14px;
+  color: #a8c8e8;
+}
+#colorDots { display: flex; gap: 6px; }
+.dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.dot:hover { transform: scale(1.2); }
+.dot.active { border-color: #fff; transform: scale(1.18); }
+
+.records { font-size: 13px; color: rgba(255, 224, 102, 0.85); text-align: center; }
+.credit { font-size: 12px; color: rgba(160, 180, 220, 0.5); margin: 18px 0 0; text-align: center; }
+
+/* ── Pause / kết quả ── */
+.panel h2 { margin: 0 0 14px; font-size: 30px; letter-spacing: 3px; }
+.win-title { color: #4ade80; text-shadow: 0 0 24px rgba(74, 222, 128, 0.6); }
+.lose-title { color: #f43f5e; text-shadow: 0 0 24px rgba(244, 63, 94, 0.6); }
+.go-title { color: #f43f5e; }
+.stats { font-size: 16px; color: #cdd9ec; margin-bottom: 20px; line-height: 1.7; }
+.stats b { color: #ffe066; }
+.record { color: #ffe066; font-weight: 700; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0.4; } }
+.btn-row { display: flex; gap: 12px; justify-content: center; }
+
+/* ── Panel MẸO CHƠI ── */
+.tips-panel { max-width: 720px; width: 92%; }
+.tips-body {
+  max-height: 56vh; overflow-y: auto; text-align: left;
+  display: flex; flex-direction: column; gap: 10px; padding-right: 6px;
+}
+.tip-block {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 10px; padding: 10px 14px;
+}
+.tip-block h3 { margin: 0 0 4px; font-size: 16px; color: #7df3ff; letter-spacing: 1px; }
+.tip-block p { margin: 0; font-size: 13.5px; line-height: 1.65; color: #cdd9ec; }
+.tip-block p b { color: #ffe066; }

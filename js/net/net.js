@@ -26,9 +26,12 @@ window.Net = {
   },
   join(ip) {
     this._reset('guest');
-    const addr = (ip || '').trim().replace(/^ws(s?):\/\//, '');
+    // gõ được cả: IP LAN · IP Tailscale (100.x…) · "ip:cổng" · tên miền tunnel
+    // (ngrok/Playit.gg cho địa chỉ kiểu 0.tcp.ngrok.io:12345 — có cổng riêng)
+    let addr = (ip || '').trim().replace(/^wss?:\/\//, '');
     if (!addr) return false;
-    return this._open('ws://' + addr + ':7331', 'guest');
+    const url = /:\d+$/.test(addr) ? 'ws://' + addr : 'ws://' + addr + ':7331';
+    return this._open(url, 'guest');
   },
   _reset(mode) {
     this.mode = mode; this.peer = false; this._fxQueue = [];

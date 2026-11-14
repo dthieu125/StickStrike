@@ -65,13 +65,17 @@
           (cửa sổ đó hiện địa chỉ IP — KHÔNG tắt trong lúc chơi).<br>
           <b>Bước 2:</b> máy CHỦ bấm <b>TẠO PHÒNG</b> · máy BẠN 2 gõ IP vào ô rồi bấm <b>VÀO PHÒNG</b>.<br>
           <b>Bước 3:</b> đủ 2 người → máy CHỦ bấm <b>SINH TỔN</b> (co-op) hoặc
-          <b>⚔️ ĐỐI ĐẦU 1v1</b> (mỗi đội 1 người thật + bot đi kèm) để bắt đầu.
+          <b>⚔️ ĐỐI ĐẦU 1v1</b> (mỗi đội 1 người thật + bot đi kèm) để bắt đầu.<br>
+          💡 <b>Bạn 2 ở NƠI KHÁC (không cùng wifi)?</b> Dễ nhất: cả 2 máy cài
+          <b>Tailscale</b> (miễn phí, tailscale.com) → gõ IP <b>100.x.y.z</b> của máy chủ
+          vào ô trên là chơi như đang cùng LAN. Hoặc dùng đường hầm ngrok/Playit.gg —
+          gõ cả <b>host:cổng</b> (vd 0.tcp.ngrok.io:12345) vào ô IP.
         </p>
         <div class="btn-row">
           <button id="btnNetHost" class="btn">📶 TẠO PHÒNG (máy chủ)</button>
         </div>
         <div class="btn-row net-join">
-          <input id="netIP" class="net-ip" placeholder="IP máy chủ, ví dụ 192.168.1.5" autocomplete="off" />
+          <input id="netIP" class="net-ip" placeholder="IP máy chủ: 192.168.1.5 · 100.x.y.z (Tailscale) · host:port" autocomplete="off" />
           <button id="btnNetJoin" class="btn">🚪 VÀO PHÒNG</button>
         </div>
         <p class="stats" id="netStatus">Chưa kết nối.</p>

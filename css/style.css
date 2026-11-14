@@ -228,6 +228,8 @@ canvas#game {
 .btn:active { transform: translateY(0); }
 .btn.big { font-size: 19px; font-weight: 700; padding: 13px 18px; display: flex; flex-direction: column; gap: 2px; }
 .btn.big small { font-size: 12px; font-weight: 400; color: rgba(190, 220, 240, 0.7); }
+/* nút nào có dòng mô tả <small> thì luôn TỤT XUỐNG DƯỚI (không dính liền chữ chính) */
+.btn small { display: block; font-size: 12px; font-weight: 400; color: rgba(190, 220, 240, 0.7); }
 .btn.small { font-size: 13px; padding: 6px 12px; }
 .btn.danger { border-color: rgba(244, 63, 94, 0.6); background: rgba(244, 63, 94, 0.14); }
 .btn.danger:hover { background: rgba(244, 63, 94, 0.3); }

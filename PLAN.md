@@ -430,6 +430,43 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
       nút trong tiệm nghỉ đổi chữ "XONG? ĐÓNG TIỆM → CHỌN ĐƯỜNG" (đồng hồ đóng băng, không hiện đếm ngược sai)
 - [x] 97/97 test logic PASS ×4 lần chạy liên tiếp (thêm 4 test roguelite + 1 test click cửa hàng)
 
+### ✅ Giai đoạn 15 — 🌐 2 NGƯỜI QUA MẠNG LAN — CO-OP SINH TỒN (HOÀN THÀNH)
+
+- [x] **`server.js` — máy chủ LAN relay thuần Node** (không cài gì thêm): `node server.js`
+      → bắt tay WebSocket RFC 6455 tự viết, **chỉ 2 slot** (vào trước = HOST, sau = GUEST,
+      đủ 2 người nhận `{t:'full'}`), relay tin nhắn nguyên văn 2 chiều, in banner IP LAN để máy 2 gõ,
+      port **7331** — đã test thật: phân vai + relay đúng
+- [x] **`js/net/net.js` — client mạng**: tạo phòng (host nối ws://localhost:7331) / vào phòng (guest gõ IP),
+      báo `{t:'full'}`, mất kết nối → toast + về menu (`{t:'bye'}` 2 chiều)
+- [x] **KIẾN TRÚC HOST-AUTHORITATIVE**: máy host chạy TOÀN BỘ mô phỏng (quái/wave/đạn/damage/vật thể);
+      máy guest chỉ GỬI input ~30Hz + NHẬN snapshot ~20Hz rồi GHI ĐỀ dữ liệu vào CHÍNH các entity
+      sẵn có (Player/Monsters/Wave/Bullets/Pickups/Props) → toàn bộ draw code dùng lại nguyên xi;
+      đạn bay giữa 2 snapshot tự vẽ theo vị trí mới nhất
+- [x] **Người chơi 2 full điều khiển trên MÁY MÌNH** (chuột + phím riêng — không auto-aim):
+      input guest gói ~30Hz, host đổi thành "input ẢNH" (`Net.remoteInp` — bắt CẠNH phím)
+      đút thẳng vào `Player.update(p, ..., inputObj)` cho entity người 2
+- [x] **`Player.list` + `Player.nearest(x,y)`** — refactor chỗ nào từng gắn cứng `Player.obj`:
+      quái đuổi NGƯỜI GẦN NHẤT còn sống (co-op bị quây đúng nghĩa), lụm đồ/vàng thùng gỗ
+      chia cho người gần nhất, đồng hồ rain event vẫn P1-centered (giữ đơn giản)
+- [x] **🤝 ĐỒNG ĐỘI CỨU TẠI CHỖ**: 1 người gục nằm SƠN SẶT (vẽ nằm xám) — đồng đội đứng cạnh
+      ~70px trong **3 giây** → hồi sinh tại chỗ **50% máu** + bất tử 1.2s; đi xa → tiến độ tụt nhanh;
+      HUD hiện thanh tiến độ cứu + cảnh báo nhấp nháy; **CẢ 2 gục cùng lúc mới game over**
+- [x] **💰 TIỀN RIÊNG TÚI TỪNG NGƯỜI**: đạn/lựu/nổ luồn `owner` (người bắn) — quái nhớ `lastHitBy`,
+      chết thì tiền về túi NGƯỜI ĐÓ (không ai bắn → người gần nhất); vàng Market cộng riêng
+      (host giữ hộ gear/khiên người 2, gửi `{k:'gold'}`/`{k:'gear'}` event về máy guest tự lưu)
+- [x] **GEAR RIÊNG TỪNG NGƯỜI**: nón/giáp/khiên đọc theo từng người (`p.gear`); guest gửi bộ
+      Market của mình sang host lúc vào trận, thay đổi khiên host báo ngược về guest lưu lại
+- [x] **Chia sẻ quyết định qua mạng**: chọn lá 🗺️ (phím/click) · modifier 1/2/3 · tiệm (B + CLICK
+      món hàng — host MUA HỘ vào túi người 2) · lụm súng G → guest chỉ GỬI YÊU CẦU, host xử lý
+- [x] **Đồng bộ thế giới**: camera bám ĐIỂM GIỮA 2 người (snapshot mang `cam` → guest đổi
+      chuột↔world nhất quán); FX nổ/máu/tiếng súng/tiền/toast gom frame (`Net.fx`) gửi kèm snapshot
+      phát lại máy guest; xác quái ghép theo `_netId`, đồ rải host XÂY LẠI từ snapshot
+      (2 máy rải random là khác nhau — không tự rải); vẽ CẢ 2 người que (người 2 màu CAM)
+- [x] **Menu 🌐 2 NGƯỜI QUA MẠNG**: TẠO PHÒNG / ô IP + VÀO PHÒNG / dòng trạng thái poll 300ms /
+      nút SINH TỔN hiện khi đủ 2 người (chỉ máy chủ bấm); guest không pause được (máy chủ điều phối)
+- [x] **100/100 test logic PASS ×3 lần chạy** (thêm 3 test: snapshot round-trip JSON,
+      cứu đồng đội 3s/tụt/cả-2-gục-mới-thua, chia tiền riêng túi qua `lastHitBy`)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
       còn lại: boss nhỏ theo phase
@@ -471,12 +508,16 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ## 8. Ràng buộc & lưu ý
 
-- **Không làm multiplayer qua mạng** ở giai đoạn này (rất phức tạp) — chơi local với bot đã đủ đã.
+- ~~**Không làm multiplayer qua mạng** ở giai đoạn này~~ — **ĐÃ LÀM ở GĐ 15** (người chơi yêu cầu):
+  co-op LAN 2 máy, server relay thuần Node (`server.js`), host-authoritative. GĐ 16 sau này:
+  đối đầu 1v1 mỗi đội có bot (số bot chỉnh như DM).
 - Luôn giữ game **chạy được ở cuối mỗi buổi làm** — không code khối lớn rồi mới thử.
 - Mọi số liệu (damage, tốc độ, trọng lực...) nằm trong `config.js` — chỉnh cảm giác game sau này không phải mò code.
 - Code vẽ người que dùng chung 1 hàm `drawStickman(color, hat, pose)` — thêm màu áo/mũ mới chỉ là thêm 1 dòng config.
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH 5 giai đoạn + Giai đoạn 6-14 — 97/97 test logic PASS.**
-Mở `index.html` là chơi. Muốn chỉnh cảm giác game (máu, tốc độ, giá súng...): mở `js/config.js` + `js/weapons/weapons.js` — mọi số nằm ở đó.
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-15 (co-op LAN 2 người) — 100/100 test logic PASS.**
+Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
+TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỔN.
+Muốn chỉnh cảm giác game (máu, tốc độ, giá súng...): mở `js/config.js` + `js/weapons/weapons.js` — mọi số nằm ở đó.

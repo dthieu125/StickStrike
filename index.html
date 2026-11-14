@@ -21,6 +21,7 @@
           <div class="menu-left">
             <button id="btnWave" class="btn big">🌊 SINH TỔN<small>Wave quái vật · cửa hàng · đè kỷ lục</small></button>
             <button id="btnDM" class="btn big">🤖 DEATHMATCH<small>đội nhóm cùng bot · tuỳ chọn số người &amp; điểm thắng</small></button>
+            <button id="btnNet" class="btn big">🌐 2 NGƯỜI QUA MẠNG<small>co-op LAN cùng máy khác · chạy node server.js trước</small></button>
             <button id="btnMarket" class="btn big">🏪 MARKET<small> mua trang bị bằng vàng tích luỹ · giáp · nón · khiên</small></button>
             <button id="btnTips" class="btn">💡 MẸO CHƠI<small>điều khiển · đạn giới hạn · mẹo bazoka</small></button>
             <button id="btnKeys" class="btn">⌨️ PHÍM CHỨC NĂNG<small>tự đổi phím theo ý bạn</small></button>
@@ -52,6 +53,31 @@
           </div>
         </div>
         <p class="credit" id="creditKeys">Esc: tạm dừng · T: đường ngắm mờ · M: tắt tiếng — làm với ❤️ để giải trí sau giờ làm</p>
+      </div>
+    </div>
+
+    <!-- ═══ 🌐 2 NGƯỜI QUA MẠNG LAN ═══ -->
+    <div id="net" class="screen hidden">
+      <div class="panel market-panel">
+        <h2>🌐 2 NGƯỜI QUA MẠNG (LAN)</h2>
+        <p class="market-note">
+          <b>Bước 1:</b> trên máy CHỦ mở terminal trong thư mục game chạy <b>node server.js</b>
+          (cửa sổ đó hiện địa chỉ IP — KHÔNG tắt trong lúc chơi).<br>
+          <b>Bước 2:</b> máy CHỦ bấm <b>TẠO PHÒNG</b> · máy BẠN 2 gõ IP vào ô rồi bấm <b>VÀO PHÒNG</b>.<br>
+          <b>Bước 3:</b> đủ 2 người → máy CHỦ bấm <b>SINH TỔN</b> để bắt đầu trận co-op.
+        </p>
+        <div class="btn-row">
+          <button id="btnNetHost" class="btn">📶 TẠO PHÒNG (máy chủ)</button>
+        </div>
+        <div class="btn-row net-join">
+          <input id="netIP" class="net-ip" placeholder="IP máy chủ, ví dụ 192.168.1.5" autocomplete="off" />
+          <button id="btnNetJoin" class="btn">🚪 VÀO PHÒNG</button>
+        </div>
+        <p class="stats" id="netStatus">Chưa kết nối.</p>
+        <div class="btn-row">
+          <button id="btnNetStart" class="btn hidden">🌊 SINH TỔN — BẮT ĐẦU (chỉ máy chủ)</button>
+          <button id="btnNetBack" class="btn">‹ Về menu</button>
+        </div>
       </div>
     </div>
 
@@ -256,6 +282,7 @@
   <script src="js/ui/market.js" defer></script>
   <script src="js/ui/keybinds.js" defer></script>
   <script src="js/ui/nodes.js" defer></script>
+  <script src="js/net/net.js" defer></script>
   <script src="js/ui/menu.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

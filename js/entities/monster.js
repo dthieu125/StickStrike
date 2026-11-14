@@ -58,8 +58,10 @@ window.Monsters = {
       stunT: 0,                    // choáng khi vừa ĐỔI PHASE (cơ hội dồn đạn)
       volleyCd: 1.5, summonCd: 2,  // đồng hồ ném loạt (P1) + gọi quân (P2)
       bossMinion: false,           // crawler do boss trồi lên (đếm để giới hạn)
-      hit(dmg, isHead, hx, hy, shooterTeam) {
+      hit(dmg, isHead, hx, hy, shooterTeam, owner) {
         if (this.dead) return 0;
+        // 🤝 co-op: NHỚ AI BẮN (owner = entity người chơi) → chết thì tiền về túi NGƯỜI ĐÓ
+        if (owner && owner.money != null && owner.idx != null) this.lastHitBy = owner;
         let d = dmg;
         /* ĐIỂM YẾU BOSS: chấm vàng nhấp nháy ĐỔI CHỖ theo phase
          * (P1 = đầu · P2 = ngực · P3 = chân) — bắn trúng ×2 sát thương */
@@ -91,9 +93,10 @@ window.Monsters = {
   },
 
   update(dt) {
-    const p = Player.obj;
     for (let i = this.list.length - 1; i >= 0; i--) {
       const m = this.list[i];
+      /* 🤝 CO-OP: mỗi con tự đuổi NGƯỜI SỐNG GẦN NHẤT (người 1 hay 2 đều bị quây) */
+      const p = Player.nearest(m.x + m.w / 2, m.y + m.h / 2);
 
       if (m.dead) { // xác nát mờ dần rồi biến mất
         // kamikaze bị BẮN CHẾT cũng nổ — ai đứng gần cũng dính (bắn từ xa kẻo vạ!)
@@ -432,8 +435,8 @@ window.Monsters = {
           ctx.beginPath(); ctx.moveTo(px, m.y + 4); ctx.lineTo(px, m.y + m.h - 6); ctx.stroke();
         }
         if (m.type === 'kamikaze') {
-          // tới gần người chơi → nhấp nháy CHỚP CHỚP báo sắp nổ
-          const p = Player.obj;
+          // tới gần NGƯỜI GẦN NHẤT (co-op: người 1 hay 2) → nhấp nháy CHỚP CHỚP báo sắp nổ
+          const p = Player.nearest(m.x + m.w / 2, m.y + m.h / 2);
           const pd = p ? Math.hypot(Level.wrapDx(p.x + p.w / 2 - (m.x + m.w / 2)), p.y + p.h / 2 - (m.y + m.h / 2)) : 999;
           if (pd < 160) {
             const a = Math.max(0, 0.3 + 0.4 * Math.sin(time * 18));

@@ -291,6 +291,17 @@ canvas#game {
 
 /* ── Panel 🏪 MARKET — chợ trang bị ── */
 .market-panel { max-width: 640px; width: 94%; }
+
+/* ── Panel 🌐 2 NGƯỜI QUA MẠNG (LAN) ── */
+.net-join { justify-content: center; }
+.net-ip {
+  flex: 1; max-width: 320px;
+  background: rgba(6,14,26,0.9); color: #e8fdff;
+  border: 2px solid rgba(34,211,238,0.4); border-radius: 8px;
+  padding: 10px 14px; font: 600 15px Consolas, monospace; outline: none;
+}
+.net-ip:focus { border-color: #22d3ee; }
+
 .market-note { font-size: 13px; color: #cdd9ec; line-height: 1.6; margin: -6px 0 14px; }
 .market-note b { color: #ffe066; }
 .market-list {

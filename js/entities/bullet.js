@@ -11,7 +11,7 @@ window.Bullets = {
   _rayId: 0,
 
   /* Bắn 1 tia. Trả về { dmg, head, kill, x, y } */
-  fireHitscan(x, y, angle, w, shooterTeam) {
+  fireHitscan(x, y, angle, w, shooterTeam, owner) {
     const step = 5;
     const dx = Math.cos(angle) * step, dy = Math.sin(angle) * step;
     let cx = x, cy = y;
@@ -51,7 +51,9 @@ window.Bullets = {
           c._rayId = this._rayId; // 1 tia chỉ trúng 1 mục tiêu 1 lần
           const isHead = cy < c.y + c.h * (c.headRatio || 0.28);
           const dmg = Math.round(w.damage * (isHead ? (w.headMult || 2) : 1));
-          const applied = c.hit(dmg, isHead, cx, cy, shooterTeam);
+          const applied = c.hit(dmg, isHead, cx, cy, shooterTeam, owner);
+          // 🌐 co-op: báo máy guest văng máu + tiếng trúng đạn (vẽ lại cho giống)
+          if (window.Net && Net.mode === 'host') Net.fx({ k: 'hit', x: cx, y: cy, a: angle, c: c.bloodColor });
 
           totalDmg += applied;
           if (isHead) { anyHead = true; Time.hitstop(0.045); } // hitstop headshot!
@@ -84,9 +86,9 @@ window.Bullets = {
     return { dmg: totalDmg, head: anyHead, kill: killed, x: endX, y: endY };
   },
 
-  fireProjectile(x, y, angle, w, shooterTeam) {
+  fireProjectile(x, y, angle, w, shooterTeam, owner) {
     this.projectiles.push({
-      x, y, angle, w, shooterTeam,
+      x, y, angle, w, shooterTeam, owner,
       vx: Math.cos(angle) * w.projSpeed,
       vy: Math.sin(angle) * w.projSpeed,
       dist: 0,
@@ -104,6 +106,7 @@ window.Bullets = {
       w: { id: 'grenade', kind: 'proj', damage: G.DAMAGE, explodeRadius: G.RADIUS, shakeOnBoom: 5, projSpeed: sp },
       shooterTeam: 'X', // trung lập: nổ trúng ai đứng gần cũng dính (kể cả người ném!)
       noHit: thrower,   // nhưng KHÔNG nổ ngay trong tay người ném
+      owner: thrower,   // 🤝 co-op: nhớ ai ném → vàng từ quái nổ vì lựu về túi NGƯỜI ĐÓ
       vx: Math.cos(angle) * sp,
       vy: Math.sin(angle) * sp - G.LIFT, // đẩy lên 1 nhịp cho quỹ đạo cong
       dist: 0,
@@ -118,7 +121,7 @@ window.Bullets = {
    * • Bị TƯỜNG chặn → sóng xung kích vẫn xuyên yếu: trúng 50% máu tối đa
    * • Nổ ngay DƯỚI sàn MỎNG (1 ô) mà nạn nhân đang đứng → trúng 75% máu tối đa
    *   (đạn không xuyên sàn nhưng rung sập sàn — đúng góp ý "bazoka phóng lựu") */
-  explode(x, y, w, shooterTeam) {
+  explode(x, y, w, shooterTeam, owner) {
     for (const c of Combatants.hostiles(shooterTeam)) {
       const tx = c.x + c.w / 2, ty = c.y + c.h / 2;
       const d = Math.hypot(tx - x, ty - y);
@@ -134,7 +137,7 @@ window.Bullets = {
             ? Config.EXPLODE.THROUGH_FLOOR
             : Config.EXPLODE.THROUGH_WALL));
         }
-        const applied = c.hit(dmg, false, tx, ty, shooterTeam);
+        const applied = c.hit(dmg, false, tx, ty, shooterTeam, owner);
         if (applied > 0) {
           Particles.text(tx, ty - 20, String(applied), '#ff9d5c', 14);
           if (c.bloodColor) {
@@ -146,9 +149,11 @@ window.Bullets = {
     }
     Particles.explosion(x, y, w.explodeRadius);
     Trees.explodeAt(x, y, w.explodeRadius); // vụ nổ quét qua → cây trong bán kính bay màu cả cây
-    if (window.Props && Props.explodeAt(x, y, w.explodeRadius)); // 🛢️ vật thể trong bán kính vỡ luôn (dãn nổ dây chuyền)
+    if (window.Props) Props.explodeAt(x, y, w.explodeRadius); // 🛢️ vật thể trong bán kính vỡ luôn (dãn nổ dây chuyền)
     Camera.addShake(w.shakeOnBoom || 6);
     AudioFX.explode();
+    // 🌐 co-op: báo máy guest nổ lại (hiệu ứng + rung + tiếng) — máy host tự thấy rồi
+    if (window.Net && Net.mode === 'host') Net.fx({ k: 'boom', x, y, r: w.explodeRadius, shake: w.shakeOnBoom || 6 });
   },
 
   /* Nạn nhân có đang đứng trên SÀN MỎNG (1 ô) mà vụ nổ ở ngay DƯỚI chân không?
@@ -207,7 +212,7 @@ window.Bullets = {
         if (w.airAt && b.dist >= w.airAt) { boom = true; bx = b.x; by = b.y; } // 🔧 KÍCH NỔ GIÓ: nổ giữa đường
         if (b.dist > 1800) { boom = true; bx = b.x; by = b.y; }
       }
-      if (boom) { this.explode(bx, by, w, b.shooterTeam); this.projectiles.splice(i, 1); }
+      if (boom) { this.explode(bx, by, w, b.shooterTeam, b.owner); this.projectiles.splice(i, 1); }
     }
 
     for (let i = this.tracers.length - 1; i >= 0; i--) {

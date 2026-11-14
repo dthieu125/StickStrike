@@ -6,9 +6,21 @@
  * Deathmatch (G4): team A, chết hồi sinh
  * ========================================================= */
 window.Player = {
-  obj: null, // tham chiếu toàn cục (quái/bot tìm bạn qua đây)
+  obj: null, // tham chiếu toàn cục (quái/bot tìm bạn qua đây) — trong co-op là MÁY MÌNH điều khiển
+  list: [],  // TẤT CẢ người chơi (co-op mạng có 2: list[0]=host, list[1]=guest)
 
-  create(spawn, team, allWeapons) {
+  /* tìm người chơi SỐNG gần điểm (x,y) nhất — quái dùng để ĐUỔI, thưởng vàng dùng để CỘNG */
+  nearest(x, y) {
+    let best = null, bd = Infinity;
+    for (const p of this.list) {
+      if (p.dead || p.hp <= 0) continue;
+      const d = Math.hypot(Level.wrapDx(p.x + p.w / 2 - x), p.y + p.h / 2 - y);
+      if (d < bd) { bd = d; best = p; }
+    }
+    return best || this.obj; // cả 2 gục hết → trả về obj để logic cũ vẫn chạy
+  },
+
+  create(spawn, team, allWeapons, idx) {
     const C = Config.PLAYER;
     const p = {
       x: spawn.x, y: spawn.y,
@@ -56,6 +68,11 @@ window.Player = {
       muzzle: { x: 0, y: 0 },
       aimAngle: 0,
       hurtFlash: 0,               // viền đỏ khi bị đánh
+      idx: idx || 0,              // người chơi thứ mấy (0 = máy host, 1 = bạn 2)
+      gear: (window.Gear && Gear.state)
+        ? { helmet: !!Gear.state.helmet, armor: !!Gear.state.armor, shield: Gear.state.shield || 0 }
+        : null,                   // 🪖 TRANG BỊ RIÊNG TỪNG NGƯỜI (co-op: mỗi máy 1 bộ)
+      reviveT: 0,                 // 🤝 co-op: đồng đội đang cứu (giây tích luỹ)
 
       /* đăng ký làm mục tiêu cho đạn */
       hit(dmg, isHead, hx, hy, shooterTeam) {
@@ -67,20 +84,29 @@ window.Player = {
         this.takeDamage(dmg, hx, isHead);
         return dmg;
       },
+      /* lưu thay đổi gear: gear của MÁY MÌNH → lưu localStorage;
+       * gear của BẠN 2 (host giữ hộ) → gửi sự kiện về máy guest để nó tự lưu */
+      _saveGear() {
+        const g = this.gear;
+        if (window.Gear && g && g === Gear.state) { Gear.save(); return; }
+        if (window.Net && Net.mode === 'host' && this.idx !== 0) Net.fx({ k: 'gear', shield: g ? g.shield : 0 });
+      },
       takeDamage(dmg, srcX, isHead) {
-        /* ── TRANG BỊ từ 🏪 MARKET: nón → giáp → khiên (theo thứ tự gánh đòn) ── */
-        const g = (window.Gear && Gear.state) ? Gear.state : null;
+        /* ── TRANG BỊ của CHÍNH NGƯỜI BỊ ĐÁNH (🪖 co-op: mỗi máy 1 bộ Market): nón → giáp → khiên ──
+         * người 1 (idx 0) đọc TRỰC TIẾP bộ gear máy mình; bạn 2 (host giữ hộ) dùng bộ gear máy guest gửi sang */
+        const g = (this.idx && this.gear) ? this.gear : ((window.Gear && Gear.state) ? Gear.state : null);
         if (g) {
           if (isHead && g.helmet) dmg = Math.max(1, Math.round(dmg * 0.65)); // ×2 → ~×1.3
           if (g.armor) dmg = Math.max(1, Math.round(dmg * 0.85));            // −15%
           if (g.shield > 0) {
-            const absorb = Math.min(g.shield, dmg);
+            const absorb = Math.min(g.shield,
+ dmg);
             g.shield -= absorb;
             dmg -= absorb;
-            Gear.save(); // độ bền khiên GIỮ qua các trận — vỡ là mất
+            this._saveGear(); // độ bền khiên GIỮ qua các trận — vỡ là mất
             if (absorb > 0) Particles.sparks(this.x + this.w / 2, this.y + this.h * 0.4, 0, 6, '#7df3ff');
             if (g.shield <= 0) {
-              g.shield = 0; Gear.save();
+              g.shield = 0; this._saveGear();
               Particles.ring && Particles.ring(this.x + this.w / 2, this.y + this.h / 2, 26, '#7df3ff');
               window.showToast && showToast('💔 KHIÊN ÁNH SÁNG VỠ! (mua lại ở 🏪 Market)');
             }
@@ -109,6 +135,8 @@ window.Player = {
       },
     };
     this.obj = p;
+    if (!idx) { this.list = [p]; } // người chơi ĐẦU → dựng lại danh sách
+    else this.list.push(p);        // người chơi 2 → thêm vào co-op
     // súng được TẶNG lúc vào game → đạn vô hạn (súng LỤM trên map mới bị giới hạn)
     Weapons.list.forEach((w, i) => { if (p.owned.has(w.id)) p.spare[i] = Infinity; });
     Combatants.register(p);
@@ -140,6 +168,24 @@ window.Player = {
     p.h = Config.PLAYER.H;
     Weapons.list.forEach((w, i) => { if (p.owned.has(w.id)) p.mags[i] = (window.GunUp ? GunUp.mag(w) : w.mag); });
     p.dashT = 0; p.dashCd = 0; p.iframe = 0; p.grenCd = 0; p.spin = 0;
+  },
+
+  /* 🤝 CO-OP: đồng đội cứu — hồi sinh tại chỗ với 50% máu (gọi từ Wave khi đồng đội đứng cạnh đủ 3s) */
+  reviveCoop(d, rescuer) {
+    d.x = rescuer.x + (rescuer.facing >= 0 ? 26 : -26);
+    d.y = rescuer.y;
+    d.vx = 0; d.vy = 0;
+    d.dead = false;
+    d.hp = Math.ceil(d.maxHp * 0.5);
+    d.h = Config.PLAYER.H;
+    d.crouch = false; d.prone = false;
+    d.dashT = 0; d.dashCd = 0; d.grenCd = 0; d.spin = 0;
+    d.iframe = 1.2; // bất tử 1.2s vừa sống lại — tránh chết dây chuyền
+    d.reviveT = 0;
+    Particles.poof(d.x + d.w / 2, d.y + d.h / 2);
+    Particles.text(d.x + d.w / 2, d.y - 10, '🤝 ĐÃ CỨU!', '#7ef27a', 15);
+    AudioFX._tone(300, 600, 0.25, 'triangle', 0.14);
+    window.showToast && showToast('🤝 ' + (d.idx === 0 ? 'Người 1' : 'Người 2') + ' đã được cứu — chiến tiếp!');
   },
 
   selectWeapon(p, i) {
@@ -199,9 +245,9 @@ window.Player = {
     return true;
   },
 
-  update(p, level, dt, mouseWorld) {
+  update(p, level, dt, mouseWorld, inputObj) {
     const C = Config.PLAYER;
-    const inp = window.Input;
+    const inp = inputObj || window.Input; // co-op mạng: người 2 nhận input TIÊM từ máy guest
 
     p.hurtFlash = Math.max(0, p.hurtFlash - dt);
 
@@ -234,6 +280,7 @@ window.Player = {
     /* ── 2. Ngắm bằng chuột ── */
     const shoulderY = p.y + p.h * 0.38;
     const cx = p.x + p.w / 2;
+    p.mouseW = mouseWorld; // 🤝 co-op: mỗi người 1 toạ độ chuột riêng (P2 là world do host đổi từ chuột guest)
     p.aimAngle = Math.atan2(mouseWorld.y - shoulderY, mouseWorld.x - cx);
     p.facing = Math.cos(p.aimAngle) >= 0 ? 1 : -1;
 
@@ -391,10 +438,12 @@ window.Player = {
     p.muzzle.x = m.x; p.muzzle.y = m.y;
 
     AudioFX.shot(w.sound);
+    // 🌐 co-op: báo máy guest phát TIẾNG BẮN (máy host tự nghe rồi)
+    if (window.Net && Net.mode === 'host') Net.fx({ k: 'shot', w: w.sound });
     Camera.addShake(w.shake);
 
     if (w2.kind === 'proj') {
-      Bullets.fireProjectile(m.x, m.y, a, w2, p.team);
+      Bullets.fireProjectile(m.x, m.y, a, w2, p.team, p); // 🤝 co-op: nhớ NGƯỜI BẮN
       // bắn rocket/plasma bị đẩy nhẹ ngược — đã tay
       p.vx -= Math.cos(a) * 40;
     } else {
@@ -403,7 +452,7 @@ window.Player = {
       const spMul = (p.prone ? Config.PLAYER.PRONE_SPREAD : 1) * (1 - 0.75 * (p.spin || 0));
       for (let i = 0; i < (w2.pellets || 1); i++) {
         const spread = (Math.random() - 0.5) * 2 * w2.spread * spMul;
-        const res = Bullets.fireHitscan(m.x, m.y, a + spread, w2, p.team);
+        const res = Bullets.fireHitscan(m.x, m.y, a + spread, w2, p.team, p); // 🤝 nhớ NGƯỜI BẮN
         totalDmg += res.dmg;
         if (res.head) anyHead = true;
         tx = res.x; ty = res.y;
@@ -436,7 +485,7 @@ window.Player = {
     p.muzzle.x = m.x; p.muzzle.y = m.y;
     AudioFX.shot(w.sound);
     Camera.addShake(w.shake * 0.6);
-    const shot = (ang, ov) => Bullets.fireHitscan(m.x, m.y, ang, { ...s, ...ov }, p.team);
+    const shot = (ang, ov) => Bullets.fireHitscan(m.x, m.y, ang, { ...s, ...ov }, p.team, p); // 🤝 nhớ NGƯỜI BẮN
     const mark = (res) => { if (res.dmg > 0) Particles.text(res.x, res.y - 10, String(res.dmg), '#7df3ff', 12); };
     const kick = w.recoil >= 1 ? 60 : 30;
 
@@ -463,13 +512,15 @@ window.Player = {
         [-0.02, 0.02].forEach((off) => mark(shot(a + off, { damage: s.damage * 0.7, tracerColor: '#9ff3ff' })));
         break;
       case 'rocket': { // KÍCH NỔ GIÓ: nổ giữa đường gần điểm ngắm (±tối đa 520px)
-        const d = Math.hypot(Input.mouse.x - m.x, Input.mouse.y - m.y) * 0.8;
-        Bullets.fireProjectile(m.x, m.y, a, { ...s, airAt: Math.max(120, Math.min(520, d)) }, p.team);
+        // 🤝 co-op: mỗi người 1 toạ độ chuột riêng (p.mouseW do update ghi); test gọi trực tiếp thì fallback Input.mouse
+        const mwAim = p.mouseW || Input.mouse;
+        const d = Math.hypot(mwAim.x - m.x, mwAim.y - m.y) * 0.8;
+        Bullets.fireProjectile(m.x, m.y, a, { ...s, airAt: Math.max(120, Math.min(520, d)) }, p.team, p);
         p.vx -= Math.cos(a) * 40;
         break;
       }
       case 'plasma': // cầu plasma nảy tường ×3 rồi mới nổ
-        Bullets.fireProjectile(m.x, m.y, a, { ...s, bounce: 3, projSpeed: s.projSpeed * 0.9 }, p.team);
+        Bullets.fireProjectile(m.x, m.y, a, { ...s, bounce: 3, projSpeed: s.projSpeed * 0.9 }, p.team, p);
         p.vx -= Math.cos(a) * 30;
         break;
       default:

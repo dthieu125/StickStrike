@@ -13,16 +13,42 @@ window.Menu = {
     this.game = game;
     const $ = (id) => document.getElementById(id);
     this.el = {
-      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'),
+      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'),
       mapName: $('mapName'), records: $('records'), hatBtn: $('hatBtn'),
       goTitle: $('goTitle'), goStats: $('goStats'),
       meTitle: $('meTitle'), meStats: $('meStats'),
+      netStatus: $('netStatus'), netStart: $('btnNetStart'),
     };
 
     // nút menu chính
     $('btnWave').onclick = () => { AudioFX.click(); this.game.startWave(); };
     $('btnDM').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
+    $('btnNet').onclick = () => { AudioFX.click(); this.show('net'); };
+    $('btnNetBack').onclick = () => {
+      AudioFX.click();
+      if (window.Net && Net.mode !== 'off' && !Net.peer) Net.off(); // chưa vào trận → huỷ phòng
+      this.show('menu');
+    };
+    // 🌐 LAN: tạo phòng (máy chủ) / vào phòng (máy 2)
+    $('btnNetHost').onclick = () => {
+      AudioFX.ensure(); AudioFX.click();
+      if (!window.Net) return;
+      Net.host();
+      this._netPoll();
+    };
+    $('btnNetJoin').onclick = () => {
+      AudioFX.ensure(); AudioFX.click();
+      if (!window.Net) return;
+      const ip = $('netIP').value;
+      if (Net.join(ip)) this._netPoll();
+    };
+    // máy chủ bấm SINH TỔN khi đã đủ 2 người
+    this.el.netStart.onclick = () => {
+      AudioFX.click();
+      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startWave();
+    };
     $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
+    $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnTips').onclick = () => { AudioFX.click(); this.show('tips'); };
     $('btnTipsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
@@ -128,12 +154,29 @@ window.Menu = {
 
   show(panel) {
     Market.hide(); KeySettings.hide(); // rời chợ / bảng phím nếu đang mở
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys'].forEach((id) => {
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net'].forEach((id) => {
       this.el[id].classList.toggle('hidden', id !== panel);
     });
   },
   hideAll() {
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys'].forEach((id) => this.el[id].classList.add('hidden'));
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net'].forEach((id) => this.el[id].classList.add('hidden'));
+  },
+
+  /* 🌐 màn hình LAN: cập nhật dòng trạng thái + hiện nút BẮT ĐẦU khi đủ 2 người */
+  _netPoll() {
+    if (this._netT) clearInterval(this._netT);
+    this._netT = setInterval(() => {
+      if (this.el.net.classList.contains('hidden') || !window.Net || Net.mode === 'off') {
+        clearInterval(this._netT); this._netT = null;
+        return;
+      }
+      let s = Net.status || 'Đang chờ...';
+      if (Net.mode === 'host') s = Net.peer
+        ? '✅ Bạn 2 ĐÃ VÀO PHÒNG — bấm SINH TỔN để bắt đầu!'
+        : '✅ Phòng đã mở — chờ bạn 2 vào (máy 2 gõ IP rồi bấm VÀO PHÒNG)...';
+      this.el.netStatus.textContent = s;
+      this.el.netStart.classList.toggle('hidden', !(Net.mode === 'host' && Net.peer));
+    }, 300);
   },
 
   showGameOver(wave, score, waveRecord, scoreRecord) {
@@ -142,6 +185,9 @@ window.Menu = {
       `Sống sót đến <b>Wave ${wave}</b> · <b>${score} điểm</b>` +
       (waveRecord ? '<br><span class="record">🌟 KỶ LỤC WAVE MỚI!</span>' : '') +
       (scoreRecord ? '<br><span class="record">🌟 KỶ LỤC ĐIỂM MỚI!</span>' : '');
+    // 🌐 co-op: chỉ máy CHỦ mới "đánh lại" được (máy 2 phải đợi host)
+    const retry = document.getElementById('btnRetryWave');
+    if (retry) retry.classList.toggle('hidden', window.Net && Net.mode === 'guest');
     this.refreshScores();
     this.show('gameover');
   },

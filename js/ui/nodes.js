@@ -37,7 +37,11 @@ window.Nodes = {
         '<span class="nicon">' + n.icon + '</span>' +
         '<span class="nname">' + n.name + '</span>' +
         '<span class="ndesc">' + n.desc + '</span>';
-      card.onclick = () => Wave.chooseNode(i);
+      card.onclick = () => {
+        // 🌐 co-op: máy guest KHÔNG tự chọn — gửi yêu cầu sang máy host xử lý
+        if (window.Net && Net.mode === 'guest') Net.send({ t: 'node', i });
+        else Wave.chooseNode(i);
+      };
       this.listEl.appendChild(card);
     });
   },

@@ -23,6 +23,14 @@
       mapDef = Maps.deck;
       _setupLevel(mapDef);
       Player.create(Level.spawn, 'P', false); // wave: chỉ có súng lục + lục lọi
+      // 🌐 co-op LAN: máy host TẠO THÊM người 2 (máy guest gửi phím sang, host mô phỏng hộ)
+      if (window.Net && Net.mode === 'host' && Net.peer) {
+        Net.initRemoteInp();  // input ẢNH của bạn 2 bắt đầu từ số 0
+        Net._monMap = {};     // dựng lại bảng ghép quái theo id
+        Player.create({ x: Level.spawn.x + 46, y: Level.spawn.y }, 'P', false, 1);
+        Player.list[1].color = '#ffb347'; // người 2 màu CAM để phân biệt
+        Net.send({ t: 'start', mapId: 'deck' });
+      }
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
       Props.spawnForMap(mapDef); // 🛢️ vật thể phá được — chỉ chế độ Sinh tồn (vàng rơi chỉ nghiêng về wave)
       Wave.start();
@@ -55,8 +63,9 @@
       Wave.reset(); Match.reset();
       Monsters.clear(); Bots.clear(); Bullets.clear();
       Combatants.reset();
-      Player.obj = null;
+      Player.obj = null; Player.list = [];
       Level.splatterClear && Level.splatterClear();
+      if (window.Net && Net.mode !== 'off') Net.off(); // rời trận → đứt kết nối (máy kia nhận 'bye' → về menu)
       AudioFX.stopMusic();
       Menu.refreshScores();
       Menu.show('menu');
@@ -78,7 +87,121 @@
   // xoá vết máu khi đổi map (tái tạo canvas stains)
   // (Level.load đã tạo stains mới mỗi lần nạp — đủ dùng)
 
+  /* ═════════ 🌐 MẠNG LAN — luồng tin nhắn giữa 2 máy ═════════ */
+
+  /* MÁY GUEST nhận "bắt đầu trận" → dựng map + 2 người que (chỉ để VẼ — mô phỏng do host lo) */
+  function _guestStart(m) {
+    AudioFX.ensure();
+    mode = 'wave'; paused = false;
+    mapDef = Maps[m.mapId] || Maps.deck;
+    _setupLevel(mapDef);
+    // 2 entity người que ĐỂ VẼ: số 1 là đồng đội, số 2 là MÌNH (snapshot host sẽ ghi đè dữ liệu)
+    Player.create(Level.spawn, 'P', false);
+    Player.create({ x: Level.spawn.x + 46, y: Level.spawn.y }, 'P', false, 1);
+    Player.list[1].color = '#ffb347'; // người 2 màu CAM
+    Wave.start();            // trạng thái ban đầu (snapshot máy host sẽ đè lên ngay)
+    Net._monMap = {};        // dựng lại bảng ghép quái
+    _gNodeOpen = false; _gOverShown = false;
+    // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
+    const g = (window.Gear && Gear.state) ? Gear.state : {};
+    Net.send({ t: 'gear', g: { helmet: !!g.helmet, armor: !!g.armor, shield: g.shield || 0 } });
+    Menu.hideAll();
+    AudioFX.startMusic();
+    showToast('🤝 Đã vào trận! Bạn là NGƯỜI 2 (màu cam) — giữ gần đồng đội để cứu nhau.');
+  }
+
+  /* MÁY GUEST mỗi frame: bấm chọn lá/modifier/tiệm/lụm → GỬI YÊU CẦU (không tự quyết) */
+  function _guestUi() {
+    const inp = Input;
+    // 🗺️ bảng chọn đường: host đóng/mở → mình mở/đóng panel theo snapshot
+    if (Wave.nodeOpen !== _gNodeOpen) {
+      _gNodeOpen = Wave.nodeOpen;
+      if (_gNodeOpen) Nodes.show(); else Nodes.hide();
+    }
+    if (Wave.nodeOpen) { // phím 1/2/3 chọn lá
+      if (inp.wasPressed('slot0')) Net.send({ t: 'node', i: 0 });
+      else if (inp.wasPressed('slot1')) Net.send({ t: 'node', i: 1 });
+      else if (inp.wasPressed('slot2')) Net.send({ t: 'node', i: 2 });
+    }
+    // ⚡ modifier 1/2/3 (lựa chọn CHUNG cả 2 người)
+    if (Wave.offers && (Wave.state === 'countdown' || Wave.state === 'intermission')) {
+      if (inp.wasPressed('slot0')) Net.send({ t: 'offer', i: 0 });
+      else if (inp.wasPressed('slot1')) Net.send({ t: 'offer', i: 1 });
+      else if (inp.wasPressed('slot2')) Net.send({ t: 'offer', i: 2 });
+    }
+    // 🏪 tiệm: phím B + CLICK món hàng (nuốt click → gửi yêu cầu MUA sang host)
+    if (Wave.state === 'intermission') {
+      if (inp.wasPressed('buy')) Net.send({ t: 'shop' });
+      if (Shop.open && inp.mouse.pressed) {
+        const hit = Shop.rows.find((r) =>
+          inp.mouse.x >= r.x && inp.mouse.x <= r.x + r.w && inp.mouse.y >= r.y && inp.mouse.y <= r.y + r.h);
+        if (hit) {
+          if (hit.action === 'close') Net.send({ t: 'shop' });
+          else if (typeof hit.action === 'object') {
+            Net.send({ t: 'buy', kind: hit.action.kind, w: hit.action.kind === 'weapon' ? hit.action.w.id : null });
+          }
+        }
+      }
+    }
+    // phím G lụm súng
+    const p = Player.obj;
+    if (inp.wasPressed('pickup') && p && p.hp > 0 && !p.dead) Net.send({ t: 'pickup' });
+    // T đường ngắm + M tiếng: đồ của MÁY MÌNH — vẫn cho phép
+    if (inp.wasPressed('guide')) {
+      Config.AIM_GUIDE = !Config.AIM_GUIDE;
+      showToast(Config.AIM_GUIDE ? '📍 BẬT đường ngắm' : 'Đã ẩn đường ngắm');
+    }
+    if (inp.wasPressed('mute')) {
+      AudioFX.toggleMute();
+      showToast(AudioFX.muted ? '🔇 Đã tắt tiếng' : '🔊 Đã bật tiếng');
+    }
+    // Escape KHÔNG pause được — máy host điều phối
+    if (inp.wasPressed('pause')) showToast('🔒 Chế độ mạng: máy CHỦ điều phối — không pause được');
+  }
+
+  /* BỘ PHÂN TIN NHẮN — host nhận input/yêu cầu của guest, guest nhận snapshot/lệnh */
+  function _netMsg(m) {
+    if (Net.mode === 'host') {
+      switch (m.t) {
+        case 'in': Net.applyRemoteInput(m); break;   // phím + chuột của bạn 2
+        case 'node': Wave.chooseNode(m.i); break;    // bạn 2 chọn lá 🗺️
+        case 'offer': Wave.chooseOffer(m.i); break;  // bạn 2 chọn modifier ⚡
+        case 'shop': // bạn 2 bấm B / nút đóng tiệm
+          if (Wave.state === 'intermission') {
+            if (Wave.resting) Shop.setOpen(false);
+            else if (!Wave.nodeOpen) Shop.setOpen(!Shop.open);
+          }
+          break;
+        case 'buy': { // bạn 2 mua hàng — host MUA HỘ vào túi người 2
+          const p2 = Player.list[1];
+          if (!p2 || !Shop.open) break;
+          const item = Shop.items(p2).find((it) => it.kind === m.kind
+            && (it.kind !== 'weapon' || (it.w && it.w.id === m.w)));
+          if (item) Shop.buy(item, p2);
+          break;
+        }
+        case 'pickup': { // bạn 2 bấm G lụm súng
+          const p2 = Player.list[1];
+          if (p2 && p2.hp > 0 && !p2.dead) Pickups.tryPickup(p2);
+          break;
+        }
+        case 'gear': // bộ trang bị Market của bạn 2 (host mô phỏng GIỮ HỘ)
+          if (Player.list[1]) {
+            Player.list[1].gear = { helmet: !!m.g.helmet, armor: !!m.g.armor, shield: m.g.shield || 0 };
+          }
+          break;
+      }
+    } else if (Net.mode === 'guest') {
+      switch (m.t) {
+        case 'start': _guestStart(m); break; // host bắt đầu trận
+        case 'snap': Net.snap = m; break;    // "ảnh chụp" thế giới — tickGuest sẽ áp
+      }
+    }
+  }
+
   /* ============ UPDATE ============ */
+  let _gNodeOpen = false, _gOverShown = false; // (guest) trạng thái UI đang hiển thị
+
   function update(rawDt) {
     time += rawDt;
     const dt = Time.step(rawDt); // hitstop làm chậm thời gian trong tích tắc
@@ -96,6 +219,24 @@
       return;
     }
 
+    /* ── 🌐 MÁY GUEST: KHÔNG mô phỏng gì cả — chỉ gửi phím + áp "ảnh chụp" máy host ── */
+    if (window.Net && Net.mode === 'guest') {
+      Net.tickGuest(dt);       // gửi input ~30Hz + áp snapshot mới nhất
+      Particles.update(dt);    // hạt hiệu ứng riêng của máy mình
+      _guestUi();              // bấm lá/modifier/tiệm → GỬI YÊU CẦU sang host
+      // host báo trận kết thúc (snapshot Wave.over) → màn hình kết quả
+      if (Wave.over && !_gOverShown) {
+        _gOverShown = true;
+        Menu.showGameOver(Wave.num, Wave.score, false, false);
+      }
+      if (toastTimer > 0) toastTimer -= rawDt;
+      if (GameLoop.error && !errShown) {
+        errShown = true;
+        showToast('🐞 Lỗi: ' + GameLoop.error.message + ' (xem console F12)');
+      }
+      return;
+    }
+
     if (paused) return;
 
     /* ── TRẬN ĐÃ KẾT THÚC → mọi thứ ĐỨNG IM ngay (góp ý người chơi):
@@ -110,7 +251,16 @@
     const p = Player.obj;
     const mw = { x: Input.mouse.x + Camera.x, y: Input.mouse.y + Camera.y };
 
-    Player.update(p, Level, dt, mw);
+    /* 🤝 CO-OP LAN: host chạy mô phỏng CHO CẢ 2 người — mỗi người 1 bộ input riêng */
+    const coop = window.Net && Net.mode === 'host' && Net.peer && Player.list.length > 1;
+    if (coop) {
+      Player.update(p, Level, dt, mw); // người 1: chuột + phím của máy này
+      const r = Net.remoteInp;         // người 2: input ẢNH gửi từ máy guest
+      Player.update(Player.list[1], Level, dt,
+        { x: r.mouse.x + Camera.x, y: r.mouse.y + Camera.y }, r);
+    } else {
+      Player.update(p, Level, dt, mw);
+    }
     Monsters.update(dt);
     Bots.update(dt);
     Bullets.update(dt);
@@ -132,12 +282,16 @@
       // 🛒 CLICK chuột vào món hàng / nút "RA ĐÁNH TIẾP" — cửa hàng vẽ bằng canvas
       // nên phải tự soi toạ độ click qua Shop.handleClick (nuốt luôn click để không bắn súng)
       if (Shop.open && Input.mouse.pressed) Shop.handleClick(Input.mouse.x, Input.mouse.y);
+      // 🌐 host tick: gửi snapshot ~20Hz cho máy guest
+      if (coop) Net.tickHost(dt);
     } else if (mode === 'dm') {
       Match.update(dt);
     }
 
-    // phím G — lụm súng đang nằm gần người (CẢ wave lẫn DM)
-    if ((mode === 'wave' || mode === 'dm') && Input.wasPressed('pickup') && p.hp > 0 && !p.deadTimer) Pickups.tryPickup(p);
+    // phím G — lụm súng đang nằm gần người (CẢ wave lẫn DM) · co-op: mỗi người lụm riêng
+    for (const pl of (coop ? Player.list : [p])) {
+      if (Input.wasPressed('pickup') && pl.hp > 0 && !pl.deadTimer) Pickups.tryPickup(pl);
+    }
 
     // Escape → pause
     if (Input.wasPressed('pause')) {
@@ -157,16 +311,28 @@
     }
 
     // rơi khỏi map (wave) → hồi sinh trừ máu; (dm) → tự hồi sinh hệ thống match
-    if (p.y > Level.pxH + 150 && p.hp > 0) {
-      if (mode === 'wave') {
-        p.takeDamage(15, p.x);
-        p.x = Level.spawn.x; p.y = Level.spawn.y;
-        p.vx = 0; p.vy = 0;
-        showToast('Rơi khỏi tàu! -15 máu');
+    for (const pl of (coop ? Player.list : [p])) {
+      if (pl.y > Level.pxH + 150 && pl.hp > 0) {
+        if (mode === 'wave') {
+          pl.takeDamage(15, pl.x);
+          pl.x = Level.spawn.x; pl.y = Level.spawn.y;
+          pl.vx = 0; pl.vy = 0;
+          if (pl === p) showToast('Rơi khỏi tàu! -15 máu');
+        }
       }
     }
 
-    Camera.follow(p, viewW, viewH, Level, dt);
+    // camera bám: chơi đơn → người 1; co-op → ĐIỂM GIỮA 2 người (cả 2 đều trong khung hình)
+    let camTarget = p;
+    if (coop) {
+      const a = Player.list[0], b = Player.list[1];
+      camTarget = {
+        x: (a.x + a.w / 2 + b.x + b.w / 2) / 2,
+        y: (a.y + a.h / 2 + b.y + b.h / 2) / 2,
+        w: 0, h: 0, // "điểm" chứ không phải entity — follow chỉ cần toạ độ tâm
+      };
+    }
+    Camera.follow(camTarget, viewW, viewH, Level, dt);
     Level.camX = Camera.x; Level.camY = Camera.y;
 
     if (toastTimer > 0) toastTimer -= rawDt;
@@ -190,27 +356,29 @@
     if (window.Props) Props.draw(ctx); // 🛢️ thùng nổ / thùng gỗ / ống ga
 
     if (mode !== 'menu' && Player.obj) {
-      const p = Player.obj;
-      const pAlive = p.hp > 0;
-
       Monsters.draw(ctx, time);
       Bots.draw(ctx);
       Pickups.draw(ctx); // súng rải + túi máu (cả wave lẫn DM)
 
-      if (pAlive) {
+      // 🤝 co-op: vẽ CẢ 2 người — người gục nằm SƠN SẶT để đồng đội biết đường mà chạy tới cứu
+      for (const pl of Player.list) {
+        const isLocal = pl === Player.obj || (window.Net && pl.idx === Net.localIdx);
         drawStickman(ctx, {
-          cx: p.x + p.w / 2, feetY: p.y + p.h, h: p.h,
-          facing: p.facing, runPhase: p.runPhase,
-          moving: Math.abs(p.vx) > 15, onGround: p.onGround, crouch: p.crouch,
-          prone: p.prone,                                   // tư thế NẰM (giữ C)
-          visor: true,                                      // kính ngắm ngầu hơn
-          glow: window.Gear && Gear.active(),               // hào quang khi mang trang bị
-          color: p.hurtFlash > 0.25 ? '#ff8080' : p.color,
-          hat: p.hat, aimAngle: p.aimAngle,
-          gun: Weapons.list[p.wi], gunKick: p.gunKick,
+          cx: pl.x + pl.w / 2, feetY: pl.y + pl.h, h: pl.h,
+          facing: pl.facing, runPhase: pl.runPhase,
+          moving: Math.abs(pl.vx) > 15, onGround: pl.onGround, crouch: pl.crouch,
+          prone: pl.prone || (pl.dead || pl.hp <= 0),         // gục → vẽ NẰM SƠN SẶT
+          visor: true,
+          glow: !!(window.Gear && pl.idx === 0 && Gear.active()),
+          color: (pl.dead || pl.hp <= 0) ? 'rgba(110,120,135,0.75)'
+            : (pl.hurtFlash > 0.25 ? '#ff8080' : pl.color),
+          hat: pl.hat, aimAngle: pl.aimAngle,
+          gun: Weapons.list[pl.wi], gunKick: pl.gunKick,
         });
-        drawAimGuide();
-        drawMuzzleFlash();
+        if (isLocal && pl.hp > 0) { // đường ngắm + chớp nòng CHỈ của máy MÌNH
+          drawAimGuide(pl);
+          drawMuzzleFlash(pl);
+        }
       }
       Bullets.draw(ctx);
       Particles.draw(ctx);
@@ -225,7 +393,7 @@
       // thanh hàng súng DOM — ẩn khi ở menu, hiện khi vào game
       const bar = document.getElementById('wbar');
       bar.style.display = mode !== 'menu' ? 'flex' : 'none';
-      if (mode === 'wave' && Shop.open) Shop.updateAndDraw(ctx, Input.mouse);
+      if (Shop.open) Shop.updateAndDraw(ctx, Input.mouse);
       if (Player.obj && Player.obj.hp > 0) drawCrosshair();
       drawVignette();
       drawFog(); // 🎲 sương mù che ngoài tầm nhìn (vẽ cuối để phủ lên hết)
@@ -261,9 +429,8 @@
     ctx.fillRect(0, 0, viewW, viewH);
   }
 
-  function drawAimGuide() {
+  function drawAimGuide(p) {
     if (!Config.AIM_GUIDE) return;
-    const p = Player.obj;
     const w = Weapons.list[p.wi];
     const m = Player.muzzlePos(p, w);
     const end = Bullets.previewEnd(m.x, m.y, p.aimAngle, w, p.team);
@@ -284,8 +451,7 @@
     ctx.restore();
   }
 
-  function drawMuzzleFlash() {
-    const p = Player.obj;
+  function drawMuzzleFlash(p) {
     if (p.muzzleTimer <= 0) return;
     const w = Weapons.list[p.wi];
     const s = w.flash || 1;
@@ -359,6 +525,33 @@
       ctx.font = '600 16px "Segoe UI", system-ui, sans-serif';
       ctx.fillStyle = '#ffe066';
       ctx.fillText('💰 ' + p.money, 16, viewH - 104);
+
+      // 🤝 co-op: thanh máu ĐỒNG ĐỘI + tiến độ đang CỨU (gục = chạy tới cứu!)
+      if (Player.list.length > 1) {
+        const mate = Player.list[0] === p ? Player.list[1] : Player.list[0];
+        if (mate) {
+          const bx = 16, by = viewH - 132, bw = 190;
+          ctx.fillStyle = 'rgba(6,10,20,0.7)';
+          ctx.fillRect(bx, by, bw + 16, 24);
+          const mp = mate.dead || mate.hp <= 0 ? 0 : Math.max(0, mate.hp / mate.maxHp);
+          ctx.fillStyle = mp > 0.5 ? '#4ade80' : mp > 0.25 ? '#facc15' : '#f43f5e';
+          ctx.fillRect(bx + 8, by + 12, bw * mp, 8);
+          ctx.fillStyle = mate.dead || mate.hp <= 0 ? '#ff6b6b' : 'rgba(255,255,255,0.85)';
+          ctx.font = '700 10px Consolas, monospace';
+          ctx.fillText(mate.idx === 0 ? 'ĐỒNG ĐỘI · NGƯỜI 1' : 'ĐỒNG ĐỘI · NGƯỜI 2', bx + 8, by + 1);
+          if (mate.dead || mate.hp <= 0) {
+            // ⚠️ đồng đội gục: hiện thanh tiến độ CỨU nhấp nháy nhắc chạy tới
+            const rp = Math.min(1, (mate.reviveT || 0) / Wave.REVIVE_NEED);
+            ctx.fillStyle = 'rgba(20,0,0,0.6)';
+            ctx.fillRect(bx + 8, by + 12, bw, 8);
+            ctx.fillStyle = '#7ef27a';
+            ctx.fillRect(bx + 8, by + 12, bw * rp, 8);
+            ctx.font = '700 13px "Segoe UI", system-ui, sans-serif';
+            ctx.fillStyle = (Math.floor(time * 3) % 2) ? '#ff6b6b' : '#ffe066';
+            ctx.fillText('⚠️ ĐỒNG ĐỘI GỤC — ĐỨNG CẠNH ĐỂ CỨU ' + Math.round(rp * 100) + '%', bx, by - 20);
+          }
+        }
+      }
 
       // trạng thái wave (giữa trên)
       ctx.textAlign = 'center';
@@ -562,6 +755,7 @@
   Market.init();              // nạp ví vàng + trang bị đã lưu (🏪 Market)
   KeySettings.init();         // nạp phím đã đổi (⌨️ PHÍM CHỨC NĂNG)
   Nodes.init();               // 🗺️ bảng chọn đường roguelite (ẩn mặc định)
+  if (window.Net) Net.onMsg = _netMsg; // 🌐 mạng LAN: bộ phân tin nhắn 2 máy
   Level.load(Maps.deck);      // map nền cho menu
   Menu.init(window.Game);
   Menu.show('menu');

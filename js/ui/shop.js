@@ -14,8 +14,9 @@ window.Shop = {
   toggle() { this.open = !this.open; },
 
   // trả về danh sách món hàng kèm giá/trạng thái
-  items() {
-    const p = Player.obj;
+  // 🤝 co-op: p = người MUA (mặc định người máy mình) — mỗi người ví riêng
+  items(p) {
+    p = p || Player.obj;
     const list = [];
     for (const w of Weapons.list) {
       if (w.price > 0) {
@@ -38,8 +39,8 @@ window.Shop = {
     return list;
   },
 
-  buy(item) {
-    const p = Player.obj;
+  buy(item, p) {
+    p = p || Player.obj; // 🤝 co-op: mua vào túi NGƯỜI ĐÓ (host xử lý hộ bạn 2)
     if (!item.afford) { AudioFX.empty(); return; }
     if (item.kind === 'weapon') {
       if (item.owned) return;

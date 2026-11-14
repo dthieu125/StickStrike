@@ -119,11 +119,15 @@ window.Props = {
     p.gone = true;
     const BOOM = Config.PROPS.BOOM;
     if (p.type === 'crate') {
-      // 📦 vỡ: gỗ vụn + rơi vàng 20-35💰 (vào ví luôn — phần thưởng phá đồ)
+      // 📦 vỡ: gỗ vụn + rơi vàng 20-35💰 → về túi NGƯỜI GẦN NHẤT còn sống (co-op)
       const [lo, hi] = Config.PROPS.LOOT.crate;
       const gold = lo + Math.floor(Math.random() * (hi - lo + 1));
-      if (window.Gold) Gold.add(gold);
-      if (Player.obj && !Player.obj.dead) Player.obj.money += gold;
+      const who = Player.nearest(p.x, p.baseY - p.h * 0.5) || Player.obj;
+      if (who) {
+        if (window.Net && Net.mode === 'host' && who.idx !== 0) Net.fx({ k: 'gold', v: gold });
+        else if (window.Gold) Gold.add(gold);
+        who.money += gold;
+      }
       Particles.text(p.x, p.baseY - p.h - 8, '+' + gold + '💰', '#ffe066', 13);
       Particles.sparks(p.x, p.baseY - p.h * 0.5, -Math.PI / 2, 12, '#8a5a2b');
       Particles.smoke(p.x, p.baseY - 10, 4);

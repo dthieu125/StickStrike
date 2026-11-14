@@ -339,8 +339,10 @@ window.Pickups = {
     }
     for (const h of this.health) h.bob += dt * 3;
 
-    // ai đi qua là tự lụm (người chơi + bot còn sống)
-    if (Player.obj && !Player.obj.dead && Player.obj.hp > 0) this.tryTouch(Player.obj);
+    // ai đi qua là tự lụm (🤝 co-op: CẢ 2 người đều lụm được + bot còn sống)
+    for (const p of Player.list) {
+      if (!p.dead && p.hp > 0) this.tryTouch(p);
+    }
     for (const b of Bots.list) if (!b.dead) this.tryTouch(b);
   },
 

@@ -116,14 +116,25 @@ window.Wave = {
     if (!this.offers || !this.offers[i]) return false;
     const o = this.offers[i];
     if (o.key === 'heal') {
-      const p = Player.obj;
-      if (p) p.hp = p.maxHp; // hồi đầy NGAY
+      for (const p of Player.list) p.hp = p.maxHp; // 🤝 co-op: hồi đầy cho CẢ 2 người
     } else {
       this.mods[o.key] = o.mag; // lưu ĐỘ MẶN (dmg 0.25/0.5 · pierce 1/2 · money 2/3...)
     }
     this.offers = null;
     window.showToast && showToast('✅ Đã chọn: ' + o.name);
     return true;
+  },
+
+  /* 🤝 co-op: cộng tiền vào túi RIÊNG của người được thưởng
+   * • người 1 (máy host) hoặc chơi đơn → cộng thẳng + vào ví Market máy mình
+   * • người 2 (host giữ hộ) → gửi sự kiện 'gold' về máy guest để guest tự cộng vào Market CỦA NÓ */
+  _credit(p, gain) {
+    p.money += gain;
+    if (window.Net && Net.mode === 'host' && p.idx !== 0) {
+      Net.fx({ k: 'gold', v: gain });
+      return;
+    }
+    if (window.Gold) Gold.add(gain); // vàng tích luỹ vĩnh viễn → xài ở 🏪 Market
   },
 
   /* ── 🗺️ dựng các LÁ trên bản đồ cho lần chọn đường kế ──
@@ -193,17 +204,17 @@ window.Wave = {
       window.Shop && Shop.setOpen(true);
       window.showToast && showToast('🏪 Nghỉ ở tiệm — mua thoải mái, bấm B đóng tiệm để chọn đường tiếp!');
     } else if (n.t === 'reward') {
-      // ❤️ ôasis: hồi 50% máu + 60-120💰 NGAY, xong chọn đường tiếp luôn
+      // ❤️ ôasis: hồi 50% máu + 60-120💰 cho MỖI người (co-op), xong chọn đường tiếp luôn
       this.lastRest = true;
-      const p = Player.obj;
-      const heal = Math.round(p.maxHp * Config.ROGUE.REWARD.HEAL);
-      p.hp = Math.min(p.maxHp, p.hp + heal);
       const RG = Config.ROGUE.REWARD;
       const gold = RG.GOLD_MIN + Math.floor(Math.random() * (RG.GOLD_MAX - RG.GOLD_MIN + 1));
-      p.money += gold;
-      if (window.Gold) Gold.add(gold);
-      Particles.text(p.x + p.w / 2, p.y - 12, '+' + heal + '❤️ +' + gold + '💰', '#7ef27a', 14);
-      window.showToast && showToast('❤️ Ổ oasis: +' + heal + ' máu, +' + gold + '💰!');
+      for (const p of Player.list) {
+        const heal = Math.round(p.maxHp * Config.ROGUE.REWARD.HEAL);
+        p.hp = Math.min(p.maxHp, p.hp + heal);
+        this._credit(p, gold);
+        Particles.text(p.x + p.w / 2, p.y - 12, '+' + heal + '❤️ +' + gold + '💰', '#7ef27a', 14);
+      }
+      window.showToast && showToast('❤️ Ổ oasis: mỗi người +' + Math.round(Player.list[0].maxHp * Config.ROGUE.REWARD.HEAL) + ' máu, +' + gold + '💰!');
       this._buildNodes(); // chọn đường tiếp ngay
       window.Nodes && Nodes.show();
     }
@@ -224,16 +235,46 @@ window.Wave = {
   descOf(ev) { return ev ? ev.desc : ''; },
 
   onMonsterKilled(m) {
-    const p = Player.obj;
+    /* 🤝 co-op: tiền về túi AI BẮN CHẾT (bullet nhớ lastHitBy) — không có thì người gần nhất */
+    let credit = (m.lastHitBy && m.lastHitBy.money != null && !(m.lastHitBy.dead))
+      ? m.lastHitBy : Player.nearest(m.x + m.w / 2, m.y + m.h / 2);
+    if (!credit) credit = Player.obj;
     let gain = Math.round(m.money * (this.mods.money || 1)); // modifier THƯỞNG (×2/×3)
     if (this.event && this.event.id === 'rich') gain = Math.round(gain * Config.EVENT.RICH); // 🎲 MÙA VÀNG +50%
     if (this.nodeType === 'elite') gain = Math.round(gain * Config.ROGUE.ELITE.GOLD); // 👹 ELITE vàng ×1.6
-    p.money += gain;
-    if (window.Gold) Gold.add(gain); // vàng tích luỹ vĩnh viễn → xài ở 🏪 Market
+    this._credit(credit, gain);
     this.kills++;
     this.score += Math.round((m.score + this.num)
       * (this.nodeType === 'elite' ? Config.ROGUE.ELITE.SCORE : 1)); // 👹 elite điểm ×1.5
     Particles.text(m.x + m.w / 2, m.y - 6, '+' + gain + '💰', '#ffe066', 13);
+  },
+
+  /* 🤝 CO-OP cứu đồng đội: người gục nằm im, đồng đội CHẠY ĐẾN CẠNH đứng ~3s → hồi sinh 50% máu.
+   * Cả 2 cùng gục mới thua. Gọi mỗi frame khi wave đang chơi. */
+  REVIVE_NEED: 3,
+  _reviveTick(dt) {
+    const humans = Player.list;
+    if (humans.length < 2) return; // chơi đơn: không có ai để cứu
+    for (const d of humans) {
+      if (!d.dead && d.hp > 0) continue;
+      const mate = humans.find((q) => q !== d && !q.dead && q.hp > 0);
+      if (!mate) continue; // cả 2 gục → game over đã xử lý
+      const dist = Math.hypot(
+        Level.wrapDx((mate.x + mate.w / 2) - (d.x + d.w / 2)),
+        (mate.y + mate.h / 2) - (d.y + d.h / 2),
+      );
+      if (dist < 70) {
+        const before = Math.floor(d.reviveT / this.REVIVE_NEED * 100);
+        d.reviveT += dt;
+        if (Math.floor(d.reviveT / this.REVIVE_NEED * 100) !== before || d.reviveT <= dt) {
+          Particles.text(d.x + d.w / 2, d.y - 16,
+            'Đang cứu… ' + Math.min(99, Math.round(d.reviveT / this.REVIVE_NEED * 100)) + '%', '#7ef27a', 11);
+        }
+        if (d.reviveT >= this.REVIVE_NEED) Player.reviveCoop(d, mate);
+      } else if (d.reviveT > 0) {
+        d.reviveT = Math.max(0, d.reviveT - dt * 2); // bỏ đi → thanh cứu tụt nhanh
+      }
+    }
   },
 
   /* dựng danh sách quái cho wave tiếp theo — theo GIAI (kế hoạch chuyên gia):
@@ -336,8 +377,11 @@ window.Wave = {
         // hết quái + sạch màn → wave hoàn thành!
         if (this.queue.length === 0 && Monsters.list.every((m) => m.dead)) {
           const bonus = Config.WAVE.CLEAR_BONUS + this.num * Config.WAVE.CLEAR_BONUS_PER_WAVE;
-          p.money += bonus;
-          if (window.Gold) Gold.add(bonus); // thưởng dọn wave cũng vào ví tích luỹ
+          // 🤝 co-op: thưởng dọn wave cho CẢ 2 người (tiền riêng túi từng người)
+          for (const pl of Player.list) {
+            this._credit(pl, bonus);
+            Particles.text(pl.x + pl.w / 2, pl.y - 6, '+' + bonus + '💰', '#ffe066', 13);
+          }
           this.score += bonus;
           // vừa dọn wave BOSS → modifier HIẾM xuất hiện ở lần chọn kế
           this.bossCleared = this.num >= Config.WAVE.BOSS.FROM && this.num % Config.WAVE.BOSS.EVERY === 0;
@@ -378,8 +422,13 @@ window.Wave = {
         break;
     }
 
-    // người chơi gục → game over
-    if (p.hp <= 0 && this.state !== 'idle') {
+    // 🤝 co-op: tick cứu đồng đội (đang chơi, chưa thua) — cả 2 gục hết mới game over
+    if (this.state !== 'idle' && !this.over) this._reviveTick(dt);
+
+    // 🤝 co-op: CHỈ THUA khi CẢ 2 người gục (1 gục thì đồng đội chạy đến cứu)
+    const allDead = Player.list.length > 0
+      && Player.list.every((q) => q.dead || q.hp <= 0);
+    if (allDead && this.state !== 'idle') {
       this.gameOver();
     }
   },

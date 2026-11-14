@@ -208,12 +208,19 @@ window.Net = {
   /* ═══════════════════ BÊN GUEST ═══════════════════ */
   snap: null,        // snapshot mới nhất (chưa áp)
 
-  /* guest tick: gửi input ~30Hz + áp snapshot mới (nếu có) */
+/* guest tick: gửi input ~30Hz + áp snapshot mới (nếu có) */
   tickGuest(dt) {
     this._inT -= dt;
     if (this._inT <= 0 && window.Input) {
       this._inT = 1 / 30;
       const inp = Input;
+      // 🔫 đổi súng: số 1-0 / lăn chuột → GỬI YÊU CẦU (host đổi hộ, view theo snapshot)
+      //   đang chọn lá 🗺️ / modifier ⚡ (phím 1/2/3 cho việc khác) thì KHÔNG đổi súng
+      const slotBusy = window.Wave && Wave.state === 'intermission' && (Wave.offers || Wave.nodeOpen);
+      if (!slotBusy) {
+        for (let i = 0; i < 10; i++) if (inp.wasPressed('slot' + i)) this.send({ t: 'wi', i });
+        if (inp.mouse.wheel !== 0) this.send({ t: 'wiw', d: inp.mouse.wheel > 0 ? 1 : -1 });
+      }
       this.send({
         t: 'in',
         a: {

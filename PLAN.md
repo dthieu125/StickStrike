@@ -502,6 +502,21 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **103/103 test logic PASS ×3 lần chạy** (thêm test ĐẤU LẠI: Match.start lại
       phải xoá điểm + dựng lại đủ bot sống mới)
 
+### 🔧 SỬA LỖI PLAYTEST MẠNG (GĐ 15-16) — chơi 2 người: ngắm đứng im + bạn 2 không điều khiển được
+
+- [x] **GỐC RỄ**: `Player.create` luôn gán `Player.obj = người MỚI NHẤT` — host tạo người 2
+      sau cùng → `Player.obj` thành nhân vật CỦA BẠN 2 → host update nhầm người: người 1
+      host ĐÓNG BĂNG (đường ngắm đứng 1 chỗ, bắn lại bay ra từ nhân vật bạn 2), bạn 2 bị
+      2 bộ input + physics ×2 đè lên nhau (điều khiển rất lạ)
+      → **fix**: trả `Player.obj` về đúng máy mình ở cả 3 luồng (co-op host / DM host /
+      guest view) + test khoá hành vi "2 người điều khiển ĐỘC LẬP"
+- [x] **Cạnh phím ẢNH bị "dính"**: `remoteInp` chưa từng được `endFrame()` → `wasPressed`
+      đúng ~2 frame/nhấn (nhảy/bắn đôi) → host xoá ngay sau frame dùng (`r.endFrame()`)
+- [x] **Bạn 2 đổi được súng**: trước đây số 1-0/lăn chuột/bấm thanh súng trên máy guest
+      vô dụng (snapshot ghi đè `wi` ngay) → thêm tin nhắn `wi`/`wiw` (guest GỬI YÊU CẦU,
+      host `selectWeapon` hộ; đang chọn lá/modifier thì phím 1-3 dành cho chọn)
+- [x] **104/104 test logic PASS ×3 lần chạy** (thêm test điều khiển độc lập 2 người)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
       còn lại: boss nhỏ theo phase
@@ -552,7 +567,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-17 (co-op LAN + đối đầu 1v1 LAN + đấu lại) — 103/103 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-17 + sửa lỗi playtest mạng — 104/104 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

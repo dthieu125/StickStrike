@@ -29,6 +29,9 @@
         Net._monMap = {};     // dựng lại bảng ghép quái theo id
         Player.create({ x: Level.spawn.x + 46, y: Level.spawn.y }, 'P', false, 1);
         Player.list[1].color = '#ffb347'; // người 2 màu CAM để phân biệt
+        // 🔧 Player.create gán Player.obj = người MỚI NHẤT — phải trả về NGƯỜI 1
+        // (không thì host update nhầm người 2, người 1 đóng băng, input đè nhau!)
+        Player.obj = Player.list[0];
         Net.send({ t: 'start', mapId: 'deck' });
       }
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
@@ -71,6 +74,7 @@
       Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
       Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
       Player.list[1].color = '#f43f5e'; // bạn 2 = ĐỘI B → áo ĐỎ (dù host chọn màu gì)
+      Player.obj = Player.list[0]; // 🔧 host = ĐỘI A (người 1) — create gán obj = người mới nhất
       Net.initRemoteInp();            // input ẢNH của bạn 2 bắt đầu từ số 0
       Net._monMap = {}; Net._botMap = {}; // dựng lại bảng ghép quái + bot theo id
       Pickups.spawnForMap(mapDef);    // súng + túi máu rải cả map (guest nhận qua snapshot)
@@ -126,6 +130,7 @@
     Player.create(Level.spawn, 'P', false);
     Player.create({ x: Level.spawn.x + 46, y: Level.spawn.y }, 'P', false, 1);
     Player.list[1].color = '#ffb347'; // người 2 màu CAM
+    Player.obj = Player.list[1]; // 🔧 máy guest = NGƯỜI 2 (chắc chắn đúng, không phụ thuộc create)
     Wave.start();            // trạng thái ban đầu (snapshot máy host sẽ đè lên ngay)
     Net._monMap = {};        // dựng lại bảng ghép quái
     _gNodeOpen = false; _gOverShown = false;
@@ -149,6 +154,7 @@
     const spA = mapDef.spawns.A[0], spB = mapDef.spawns.B[0];
     Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
     Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
+    Player.obj = Player.list[1]; // 🔧 máy guest = ĐỘI B (người 2 — chỉ để vẽ + đọc snapshot)
     Net._guestColor = Player.obj.color; // giữ MÀU ÁO mình chọn (snapshot host sẽ đè, khôi phục sau)
     Trees.spawnForMap(mapDef);          // cây dựng từ mapDef — giống hệt máy host
     // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
@@ -242,6 +248,16 @@
             Player.list[1].gear = { helmet: !!m.g.helmet, armor: !!m.g.armor, shield: m.g.shield || 0 };
           }
           break;
+        case 'wi': { // 🔫 bạn 2 đổi súng (số 1-0 / bấm thanh súng ở máy nó)
+          const p2 = Player.list[1];
+          if (p2 && p2.hp > 0) Player.selectWeapon(p2, m.i);
+          break;
+        }
+        case 'wiw': { // 🔫 bạn 2 lăn chuột đổi súng
+          const p2 = Player.list[1];
+          if (p2 && p2.hp > 0) Player.selectWeapon(p2, Player.nextOwned(p2, m.d));
+          break;
+        }
       }
     } else if (Net.mode === 'guest') {
       switch (m.t) {
@@ -324,6 +340,8 @@
       const r = Net.remoteInp;         // người 2: input ẢNH gửi từ máy guest
       // guest gửi chuột theo TOẠ ĐỘ THẾ GIỚI (tự cộng camera máy nó) → host dùng NGUYÊN
       Player.update(Player.list[1], Level, dt, { x: r.mouse.x, y: r.mouse.y }, r);
+      // 🔧 "ăn" xong cạnh phím ẢNH phải XOÁ NGAY trong frame (input guest ~30Hz sẽ đặt lại)
+      r.endFrame();
     } else {
       Player.update(p, Level, dt, mw);
     }
@@ -807,7 +825,11 @@
       d.className = 'wslot';
       d.onclick = () => {
         const pl = Player.obj;
-        if (pl && pl.hp > 0) Player.selectWeapon(pl, i);
+        if (pl && pl.hp > 0) {
+          // 🌐 máy guest: bấm thanh súng = GỬI YÊU CẦU (host đổi hộ — view theo snapshot)
+          if (window.Net && Net.mode === 'guest') Net.send({ t: 'wi', i });
+          else Player.selectWeapon(pl, i);
+        }
       };
       bar.appendChild(d);
       wbarSlots.push(d);

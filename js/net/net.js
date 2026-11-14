@@ -26,11 +26,13 @@ window.Net = {
   },
   join(ip) {
     this._reset('guest');
-    // gõ được cả: IP LAN · IP Tailscale (100.x…) · "ip:cổng" · tên miền tunnel
-    // (ngrok/Playit.gg cho địa chỉ kiểu 0.tcp.ngrok.io:12345 — có cổng riêng)
-    let addr = (ip || '').trim().replace(/^wss?:\/\//, '');
-    if (!addr) return false;
-    const url = /:\d+$/.test(addr) ? 'ws://' + addr : 'ws://' + addr + ':7331';
+    if (!ip || !ip.trim()) return false;
+    // gõ được: IP LAN · IP Tailscale (100.x…) · "ip:cổng" · tên miền tunnel
+    // (ngrok/Playit/bore cho kiểu 0.tcp.ngrok.io:12345 — có cổng riêng)
+    // gõ sẵn ws:// hay wss:// (tunnel HTTPS) thì GIỮ NGUYÊN giao thức đó
+    const scheme = /^wss:\/\//.test(ip.trim()) ? 'wss://' : 'ws://';
+    const addr = ip.trim().replace(/^wss?:\/\//, '');
+    const url = /:\d+$/.test(addr) ? scheme + addr : scheme + addr + ':7331';
     return this._open(url, 'guest');
   },
   _reset(mode) {

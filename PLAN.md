@@ -491,6 +491,17 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **102/102 test logic PASS ×3 lần chạy** (thêm 2 test: snapshot DM round-trip
       bot/súng/túi máu/điểm + gỡ bot mất, Match respawn đúng spawn đội + chia điểm 2 chiều)
 
+### ✅ Giai đoạn 17 — ⚔️ ĐẤU LẠI QUA MẠNG (HOÀN THÀNH)
+
+- [x] **Host ghi nhớ map trận mạng** (`Game._netDMMap` — set trong `startNetDM`,
+      xoá trong `startDM` chơi đơn): bấm **ĐẤU LẠI** ở bảng kết quả nếu vừa chơi
+      ĐỐI ĐẦU LAN → dựng lại trận mạng **cùng map đó**, còn không → DM thường như cũ
+- [x] **Máy guest tự vào lại**: host bấm ĐẤU LẠI → gửi `start-dm` mới → guest nhận
+      `_guestStartDM` (reset điểm/cờ `_gEndShown`) → `Menu.hideAll()` nhảy thẳng vào trận,
+      không cần tạo phòng lại hay bấm gì ở máy guest
+- [x] **103/103 test logic PASS ×3 lần chạy** (thêm test ĐẤU LẠI: Match.start lại
+      phải xoá điểm + dựng lại đủ bot sống mới)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
       còn lại: boss nhỏ theo phase
@@ -541,7 +552,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-16 (co-op LAN + đối đầu 1v1 LAN) — 102/102 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-17 (co-op LAN + đối đầu 1v1 LAN + đấu lại) — 103/103 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

@@ -89,7 +89,16 @@ window.Menu = {
     $('btnGoMenu1').onclick = () => { AudioFX.click(); this.game.toMenu(); };
 
     // kết thúc trận
-    $('btnRematch').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
+    $('btnRematch').onclick = () => {
+      AudioFX.click();
+      // 🌐 mạng: vừa chơi ĐỐI ĐẦU LAN → ĐẤU LẠI = dựng lại trận MẠNG cùng map
+      //   (máy guest nhận 'start-dm' mới → tự nhảy vào trận, không cần tạo phòng lại)
+      if (window.Net && Net.mode === 'host' && Net.peer && this.game._netDMMap) {
+        this.game.startNetDM(this.game._netDMMap);
+      } else {
+        this.game.startDM(this.dmMaps[this.mapIndex]);
+      }
+    };
     $('btnGoMenu2').onclick = () => { AudioFX.click(); this.game.toMenu(); };
 
     // chấm màu áo

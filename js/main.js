@@ -41,6 +41,7 @@
     startDM(mapId) {
       AudioFX.ensure();
       mode = 'dm'; paused = false;
+      this._netDMMap = null; // chơi đơn — ĐẤU LẠI sẽ về DM thường
       mapDef = Maps[mapId];
       _setupLevel(mapDef);
       // bạn đứng vào đội hình đội A (điểm spawn đầu tiên của đội)
@@ -62,6 +63,7 @@
       }
       AudioFX.ensure();
       mode = 'dm'; paused = false;
+      this._netDMMap = mapId; // nhớ map trận MẠNG — ĐẤU LẠI dựng lại đúng map này
       mapDef = Maps[mapId];
       _setupLevel(mapDef);
       // MÁY HOST = ĐỘI A (xanh lá) · MÁY GUEST = ĐỘI B (đỏ) — mỗi đội 1 người thật

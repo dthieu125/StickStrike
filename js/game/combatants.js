@@ -23,6 +23,10 @@ window.Combatants = {
 
   // nhìn thẳng có thấy mục tiêu không? (đường ngắm không vướng tường)
   canSee(fromX, fromY, target, range) {
+    // 🎲 event SƯƠNG MÙ: tầm nhìn MỌI bên bị capped còn ~300px
+    if (window.Wave && Wave.state === 'active' && Wave.event && Wave.event.id === 'fog') {
+      range = Math.min(range, Config.EVENT.FOG_RANGE);
+    }
     const dx = Level.wrapDx(target.x + target.w / 2 - fromX); // map vòng tròn: nhìn QUA MÉP là được
     const dy = target.y + target.h / 2 - fromY;
     const dist = Math.hypot(dx, dy);

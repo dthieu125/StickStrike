@@ -144,6 +144,9 @@ window.AudioFX = {
   click() { this._tone(1100, 850, 0.035, 'square', 0.06); },
   hurt() { this._tone(220, 90, 0.12, 'sawtooth', 0.16); },
 
+  /* 🏃 dash: tiếng "whoosh" trượt lên */
+  dash() { this._tone(180, 640, 0.12, 'sawtooth', 0.1); this._tone(90, 320, 0.12, 'triangle', 0.06); },
+
   /* ── NHẠC NỀN VŨ TRỤ — tự sinh: drone trầm + giai điệu ngũ cung nhẹ ── */
   _musicTimer: null,
   _musicStep: 0,

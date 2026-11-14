@@ -24,10 +24,11 @@
       _setupLevel(mapDef);
       Player.create(Level.spawn, 'P', false); // wave: chỉ có súng lục + lục lọi
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
+      Props.spawnForMap(mapDef); // 🛢️ vật thể phá được — chỉ chế độ Sinh tồn (vàng rơi chỉ nghiêng về wave)
       Wave.start();
       Menu.hideAll();
       AudioFX.startMusic();
-      showToast('🌊 Sống sót hết chồng quái nhé! Súng rải trên map — lụm bằng G');
+      showToast('🌊 Sống sót hết chồng quái nhé! Súng rải trên map — lụm bằng ' + Input.boundKey('pickup'));
     },
     startDM(mapId) {
       AudioFX.ensure();
@@ -69,6 +70,7 @@
     Bots.clear();
     Pickups.clear();
     Trees.clear();
+    if (window.Props) Props.clear();
     Combatants.reset();
     Time.reset();
   }
@@ -116,13 +118,20 @@
 
     Pickups.update(dt); // súng rải trên map (cả wave lẫn DM) + túi máu (DM)
     Trees.update(dt);   // cây rung lắc (map rừng)
+    if (window.Props) Props.update(dt); // 🛢️ vật thể rung + rò ga
 
     if (mode === 'wave') {
       Wave.update(dt);
-      // bấm B mở cửa hàng khi đang nghỉ giữa các đợt
-      if (Input.wasPressed('buy') && Wave.state === 'intermission') Shop.toggle();
+      // bấm B mở cửa hàng khi đang nghỉ giữa các đợt (đang chọn lá 🗺️ thì KHÔNG)
+      if (Input.wasPressed('buy') && Wave.state === 'intermission') {
+        if (Wave.resting) Shop.setOpen(false); // 🏪 đang NGHỈ tiệm: B = đóng tiệm → chọn lại đường
+        else if (!Wave.nodeOpen) Shop.toggle();
+      }
       Shop.setOpen(Shop.open && Wave.state === 'intermission');
       if (Wave.state === 'intermission' && Wave.timer <= 0) Shop.setOpen(false);
+      // 🛒 CLICK chuột vào món hàng / nút "RA ĐÁNH TIẾP" — cửa hàng vẽ bằng canvas
+      // nên phải tự soi toạ độ click qua Shop.handleClick (nuốt luôn click để không bắn súng)
+      if (Shop.open && Input.mouse.pressed) Shop.handleClick(Input.mouse.x, Input.mouse.y);
     } else if (mode === 'dm') {
       Match.update(dt);
     }
@@ -178,6 +187,7 @@
 
     Level.draw(ctx, Camera.x, Camera.y, viewW, viewH, time);
     Trees.draw(ctx); // cây map rừng — vẽ sau nền, trước người (đi trước cây là được)
+    if (window.Props) Props.draw(ctx); // 🛢️ thùng nổ / thùng gỗ / ống ga
 
     if (mode !== 'menu' && Player.obj) {
       const p = Player.obj;
@@ -192,6 +202,9 @@
           cx: p.x + p.w / 2, feetY: p.y + p.h, h: p.h,
           facing: p.facing, runPhase: p.runPhase,
           moving: Math.abs(p.vx) > 15, onGround: p.onGround, crouch: p.crouch,
+          prone: p.prone,                                   // tư thế NẰM (giữ C)
+          visor: true,                                      // kính ngắm ngầu hơn
+          glow: window.Gear && Gear.active(),               // hào quang khi mang trang bị
           color: p.hurtFlash > 0.25 ? '#ff8080' : p.color,
           hat: p.hat, aimAngle: p.aimAngle,
           gun: Weapons.list[p.wi], gunKick: p.gunKick,
@@ -215,6 +228,7 @@
       if (mode === 'wave' && Shop.open) Shop.updateAndDraw(ctx, Input.mouse);
       if (Player.obj && Player.obj.hp > 0) drawCrosshair();
       drawVignette();
+      drawFog(); // 🎲 sương mù che ngoài tầm nhìn (vẽ cuối để phủ lên hết)
       updateWeaponBar();
     }
   }
@@ -230,6 +244,19 @@
     const g = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.35, viewW / 2, viewH / 2, viewH * 0.75);
     g.addColorStop(0, 'rgba(255,0,0,0)');
     g.addColorStop(1, `rgba(255,0,30,${a.toFixed(2)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, viewW, viewH);
+  }
+
+  /* 🎲 event SƯƠNG MÙ: phủ lớp sương mờ ngoài tầm nhìn 300px quanh người chơi */
+  function drawFog() {
+    if (!(mode === 'wave' && Wave.state === 'active' && Wave.event && Wave.event.id === 'fog')) return;
+    const p = Player.obj;
+    if (!p) return;
+    const cx = p.x + p.w / 2 - Camera.x, cy = p.y + p.h / 2 - Camera.y;
+    const g = ctx.createRadialGradient(cx, cy, Config.EVENT.FOG_RANGE * 0.55, cx, cy, Config.EVENT.FOG_RANGE * 1.25);
+    g.addColorStop(0, 'rgba(190,205,220,0)');
+    g.addColorStop(1, 'rgba(190,205,220,0.88)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, viewW, viewH);
   }
@@ -351,17 +378,21 @@
       ctx.fillStyle = 'rgba(160,200,240,0.8)';
       ctx.fillText(sub + '   ·   Điểm: ' + Wave.score, viewW / 2, 42);
 
-      /* ── bảng chọn 1/3 modifier cho wave tới ── */
-      if (Wave.state === 'intermission' && Wave.offers) {
+      /* ── bảng chọn 1/3 modifier cho trận NÀY — hiện trong lúc chọn lá xong (countdown)
+       *    hoặc giữa 2 wave (intermission). Đặt GIỮA MÀN HÌNH (góp ý người chơi:
+       *    đừng đè lên chữ WAVE + điểm ở góc trên) ── */
+      if ((Wave.state === 'intermission' || Wave.state === 'countdown') && Wave.offers) {
+        const midY = viewH / 2;
         ctx.font = '700 15px "Segoe UI", system-ui, sans-serif';
         ctx.fillStyle = '#7df3ff';
-        ctx.fillText('⚡ WAVE KẾ TIẾP — CHỌN 1 TRONG 3 (phím 1 / 2 / 3)', viewW / 2, 66);
+        ctx.fillText('⚡ WAVE KẾ TIẾP — CHỌN 1 TRONG 3 (phím 1 / 2 / 3)', viewW / 2, midY - 84);
 
         const cw = 300, ch = 62, gap = 16;
         const total = Wave.offers.length * cw + (Wave.offers.length - 1) * gap;
+        ctx.textAlign = 'left'; // chữ TRONG thẻ căn trái — căn giữa sẽ chĩa ra ngoài khung
         Wave.offers.forEach((o, i) => {
           const x = (viewW - total) / 2 + i * (cw + gap);
-          const y = 92;
+          const y = midY - 58;
           const hov = Input.mouse.x >= x && Input.mouse.x <= x + cw && Input.mouse.y >= y && Input.mouse.y <= y + ch;
           ctx.fillStyle = hov ? 'rgba(34,211,238,0.18)' : 'rgba(12,20,34,0.85)';
           ctx.fillRect(x, y, cw, ch);
@@ -383,9 +414,10 @@
           ctx.fillText(o.desc, x + 42, y + 34);
         });
         if (Wave.timer <= 6) {
+          ctx.textAlign = 'center';
           ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
           ctx.fillStyle = 'rgba(255,180,120,0.85)';
-          ctx.fillText('Tự chọn ngẫu nhiên sau ' + Math.max(0, Math.ceil(Wave.timer - 2)) + 's', viewW / 2, 92 + 62 + 8);
+          ctx.fillText('Tự chọn ngẫu nhiên sau ' + Math.max(0, Math.ceil(Wave.timer - 2)) + 's', viewW / 2, midY + 16);
         }
       }
 
@@ -417,8 +449,10 @@
     // hướng dẫn
     ctx.font = '400 12px "Segoe UI", system-ui, sans-serif';
     ctx.fillStyle = 'rgba(180,195,225,0.6)';
-    const hint = mode === 'dm' ? 'Esc pause · T đường ngắm · G lụm súng · M tắt tiếng'
-                               : 'Esc pause · T đường ngắm · G lụm súng · B cửa hàng · M tắt tiếng';
+    // gợi ý phím ĐỘNG theo bind hiện tại (đổi phím ở menu → chữ tự đổi theo)
+    const K = (a) => Input.boundKey(a);
+    const hint = K('pause') + ' pause · ' + K('guide') + ' đường ngắm · ' + K('prone') + ' nằm · ' + K('pickup') + ' lụm súng'
+      + (mode === 'dm' ? '' : ' · ' + K('buy') + ' cửa hàng') + ' · ' + K('mute') + ' tắt tiếng';
     ctx.fillText(hint, 20, viewH - 96);
 
     if (toastTimer > 0) {
@@ -441,7 +475,7 @@
     if (!wbarSlots) buildWeaponBar();
 
     // chỉ đụng DOM khi có gì đó thay đổi (đỡ reflow mỗi frame)
-    let sig = p.wi + '|' + Math.ceil(p.reloading) + '|';
+    let sig = p.wi + '|' + Math.ceil(p.reloading) + '|' + Math.ceil((p.grenCd || 0) * 10) + '|';
     Weapons.list.forEach((w, i) => {
       const sp = p.spare ? p.spare[i] : Infinity;
       sig += (p.owned.has(w.id) ? 1 : 0) + ',' + p.mags[i] + ',' + (sp === Infinity ? '∞' : sp) + ';';
@@ -475,6 +509,26 @@
     wbarInfo.querySelector('.wammo').textContent =
       p.reloading > 0 ? '⟳ NẠP...' :
       p.mags[p.wi] + ' / ' + (curSp === Infinity ? '∞' : curSp + ' dự trữ');
+    // dòng BẮN PHỤ (alt-fire) — hiện khi đã mở ở nâng cấp cấp 3
+    const altEl = wbarInfo.querySelector('.walt');
+    if (window.GunUp && GunUp.altOpen(cur) && cur.alt) {
+      const key = (window.Input && Input.boundKey) ? Input.boundKey('altfire') : 'E';
+      altEl.textContent = '⓶ ALT [' + key + ']: ' + cur.alt.name;
+      altEl.style.display = '';
+    } else {
+      altEl.textContent = '';
+      altEl.style.display = 'none';
+    }
+    // dòng 💣 LỰU ĐẠN (Q) — hiện hồi chiêu, sẵn sàng thì sáng
+    const grenEl = wbarInfo.querySelector('.wgren');
+    const gkey = (window.Input && Input.boundKey) ? Input.boundKey('grenade') : 'Q';
+    if (p.grenCd > 0) {
+      grenEl.textContent = '💣 ' + p.grenCd.toFixed(1) + 's';
+      grenEl.className = 'wgren wait';
+    } else {
+      grenEl.textContent = '💣 [' + gkey + '] SẴN SÀNG';
+      grenEl.className = 'wgren ready';
+    }
   }
 
   function buildWeaponBar() {
@@ -493,7 +547,7 @@
     });
     const info = document.createElement('div');
     info.className = 'winfo';
-    info.innerHTML = '<div class="wname"></div><div class="wammo"></div>';
+    info.innerHTML = '<div class="wname"></div><div class="wammo"></div><div class="walt"></div><div class="wgren"></div>';
     bar.appendChild(info);
     wbarInfo = info;
   }
@@ -505,6 +559,9 @@
   window.showToast = showToast; // shop.js dùng chung
 
   /* ── Khởi động ── */
+  Market.init();              // nạp ví vàng + trang bị đã lưu (🏪 Market)
+  KeySettings.init();         // nạp phím đã đổi (⌨️ PHÍM CHỨC NĂNG)
+  Nodes.init();               // 🗺️ bảng chọn đường roguelite (ẩn mặc định)
   Level.load(Maps.deck);      // map nền cho menu
   Menu.init(window.Game);
   Menu.show('menu');

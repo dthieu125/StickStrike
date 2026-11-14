@@ -83,6 +83,11 @@ canvas#game {
 }
 .winfo .wname { font: 600 14px "Segoe UI", system-ui, sans-serif; color: #e8fdff; }
 .winfo .wammo { font: 700 22px Consolas, monospace; color: #7df3ff; }
+.winfo .walt { font: 600 11px "Segoe UI", system-ui, sans-serif; color: #ffd166; }
+.winfo .walt:empty { display: none; }
+.winfo .wgren { font: 600 11px "Segoe UI", system-ui, sans-serif; }
+.winfo .wgren.ready { color: #4ade80; }
+.winfo .wgren.wait { color: rgba(159, 180, 216, 0.7); }
 
 /* ── Các màn hình phủ lên canvas ── */
 .screen {
@@ -96,6 +101,86 @@ canvas#game {
   z-index: 10;
 }
 .screen.hidden { display: none; }
+
+/* ── 🗺️ BẢN ĐỒ CHỌN ĐƯỜNG (roguelite) — panel KHÔNG chặn chuột lên canvas,
+ *    chỉ các THẺ bấm được; game vẫn hiện phía sau để người chơi thấy tình trạng máu ── */
+#nodePanel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 9;
+  pointer-events: none; /* container xuyên chuột */
+}
+#nodePanel.hidden { display: none; }
+.node-title {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 4px;
+  color: #e8fdff;
+  text-shadow: 0 0 26px rgba(34, 211, 238, 0.55);
+  animation: pop 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.node-sub { margin: 0; font-size: 13px; color: rgba(160, 200, 240, 0.85); }
+#nodeList { display: flex; gap: 16px; align-items: stretch; }
+.node-card {
+  pointer-events: auto; /* THẺ mới bấm được */
+  width: 250px;
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  background: linear-gradient(160deg, rgba(16, 26, 44, 0.96), rgba(8, 13, 24, 0.96));
+  border: 2px solid rgba(34, 211, 238, 0.4);
+  border-radius: 12px;
+  color: #dfe9fb;
+  cursor: pointer;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  animation: pop 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.node-card:hover {
+  transform: translateY(-6px);
+  border-color: #22d3ee;
+  box-shadow: 0 18px 50px rgba(34, 211, 238, 0.25);
+}
+.node-card .nkey {
+  position: absolute;
+  margin-top: -6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #22d3ee;
+  color: #06222e;
+  font: 700 13px Consolas, monospace;
+}
+.node-card .nicon { font-size: 34px; line-height: 1.1; }
+.node-card .nname { font: 700 16px "Segoe UI", system-ui, sans-serif; letter-spacing: 1px; }
+.node-card .ndesc { font: 400 12px "Segoe UI", system-ui, sans-serif; color: rgba(200, 220, 245, 0.85); line-height: 1.45; }
+/* màu riêng từng LOẠI lá */
+.node-card.nelite { border-color: rgba(255, 107, 107, 0.55); }
+.node-card.nelite .nkey { background: #ff6b6b; }
+.node-card.nelite:hover { border-color: #ff6b6b; box-shadow: 0 18px 50px rgba(255, 107, 107, 0.25); }
+.node-card.nelite .nname { color: #ffa9a9; }
+.node-card.nshop { border-color: rgba(255, 209, 102, 0.55); }
+.node-card.nshop .nkey { background: #ffd166; }
+.node-card.nshop:hover { border-color: #ffd166; box-shadow: 0 18px 50px rgba(255, 209, 102, 0.25); }
+.node-card.nshop .nname { color: #ffe9b0; }
+.node-card.nreward { border-color: rgba(126, 242, 122, 0.55); }
+.node-card.nreward .nkey { background: #7ef27a; }
+.node-card.nreward:hover { border-color: #7ef27a; box-shadow: 0 18px 50px rgba(126, 242, 122, 0.25); }
+.node-card.nreward .nname { color: #c4f8c2; }
+.node-card.nboss { border-color: rgba(255, 77, 77, 0.8); box-shadow: 0 12px 46px rgba(255, 77, 77, 0.35); }
+.node-card.nboss .nkey { background: #ff4d4d; }
+.node-card.nboss:hover { border-color: #ff4d4d; box-shadow: 0 18px 56px rgba(255, 77, 77, 0.45); }
+.node-card.nboss .nname { color: #ffb3b3; }
+/* thẻ needs position relative cho .nkey absolute */
+#nodeList .node-card { position: relative; }
 
 .panel {
   background: linear-gradient(160deg, rgba(16, 26, 44, 0.97), rgba(8, 13, 24, 0.97));
@@ -203,3 +288,50 @@ canvas#game {
 .tip-block h3 { margin: 0 0 4px; font-size: 16px; color: #7df3ff; letter-spacing: 1px; }
 .tip-block p { margin: 0; font-size: 13.5px; line-height: 1.65; color: #cdd9ec; }
 .tip-block p b { color: #ffe066; }
+
+/* ── Panel 🏪 MARKET — chợ trang bị ── */
+.market-panel { max-width: 640px; width: 94%; }
+.market-note { font-size: 13px; color: #cdd9ec; line-height: 1.6; margin: -6px 0 14px; }
+.market-note b { color: #ffe066; }
+.market-list {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 44vh; overflow-y: auto; text-align: left; padding-right: 4px;
+}
+.market-list.short { max-height: 24vh; }
+.mkt-h3 {
+  margin: 16px 0 4px; font-size: 15px; letter-spacing: 1px;
+  color: #7df3ff; text-align: left;
+}
+.lv-pips { font-size: 11px; letter-spacing: 2px; color: #ffd166; vertical-align: middle; }
+.mrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 10px; padding: 9px 14px;
+}
+.mrow.owned { border-color: rgba(74, 222, 128, 0.45); }
+.mrow .mtxt b { display: block; font-size: 15px; color: #fff; }
+.mrow .mtxt small { display: block; font-size: 12.5px; color: #9fb4d8; margin-top: 2px; }
+.mrow .mright { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.mrow .mprice { font-size: 14px; font-weight: 700; color: #ffe066; white-space: nowrap; }
+.mrow.owned .mprice { color: #4ade80; }
+.mrow button:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+
+/* ── Panel ⌨️ PHÍM CHỨC NĂNG ── */
+.keys-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 44vh; overflow-y: auto; text-align: left; padding-right: 4px;
+}
+.krow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  border-radius: 8px; padding: 6px 12px;
+}
+.krow.listening { border-color: #facc15; background: rgba(250, 204, 21, 0.08); }
+.krow .klabel { font-size: 14px; color: #cdd9ec; }
+.krow .kkey {
+  min-width: 110px; text-align: center;
+  font-family: Consolas, monospace; font-weight: 700; letter-spacing: 1px;
+}
+.krow.listening .kkey { color: #facc15; border-color: rgba(250, 204, 21, 0.7); }

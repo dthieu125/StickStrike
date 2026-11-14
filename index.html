@@ -21,7 +21,9 @@
           <div class="menu-left">
             <button id="btnWave" class="btn big">🌊 SINH TỔN<small>Wave quái vật · cửa hàng · đè kỷ lục</small></button>
             <button id="btnDM" class="btn big">🤖 DEATHMATCH<small>đội nhóm cùng bot · tuỳ chọn số người &amp; điểm thắng</small></button>
+            <button id="btnMarket" class="btn big">🏪 MARKET<small> mua trang bị bằng vàng tích luỹ · giáp · nón · khiên</small></button>
             <button id="btnTips" class="btn">💡 MẸO CHƠI<small>điều khiển · đạn giới hạn · mẹo bazoka</small></button>
+            <button id="btnKeys" class="btn">⌨️ PHÍM CHỨC NĂNG<small>tự đổi phím theo ý bạn</small></button>
             <div class="map-pick">
               <button id="mapPrev" class="btn small">‹</button>
               <span id="mapName">📦 Buồng chứa hàng</span>
@@ -46,10 +48,43 @@
           </div>
           <div class="menu-right">
             <canvas id="preview" width="200" height="220"></canvas>
-            <div class="controls-hint">A/D chạy · W nhảy x2 · S ngồi<br>Chuột ngắm bắn · R nạp · G lụm súng</div>
+            <div id="hintKeys" class="controls-hint">A/D chạy · W nhảy x2 · S ngồi<br>Chuột ngắm bắn · R nạp · G lụm súng</div>
           </div>
         </div>
-        <p class="credit">Esc: tạm dừng · T: đường ngắm mờ · M: tắt tiếng — làm với ❤️ để giải trí sau giờ làm</p>
+        <p class="credit" id="creditKeys">Esc: tạm dừng · T: đường ngắm mờ · M: tắt tiếng — làm với ❤️ để giải trí sau giờ làm</p>
+      </div>
+    </div>
+
+    <!-- ═══ 🏪 MARKET — chợ trang bị bằng vàng tích luỹ ═══ -->
+    <div id="market" class="screen hidden">
+      <div class="panel market-panel">
+        <h2>🏪 MARKET</h2>
+        <p class="stats" id="marketWallet">💰 Vàng của bạn: 0</p>
+        <p class="market-note">Vàng kiếm được từ chế độ <b>SINH TỔN</b> (giết quái + thưởng dọn wave) được
+        tích luỹ vĩnh viễn — chết không mất, thoát game không mất. Trang bị vĩnh viễn trừ khiên (xài 1 lần).</p>
+        <div id="marketList" class="market-list"></div>
+        <h3 class="mkt-h3">🔧 NÂNG CẤP SÚNG — lưu vĩnh viễn, dùng cho mọi trận</h3>
+        <p class="market-note">Mỗi cấp: <b>+5% dame · +5% băng · nạp nhanh 2.5%</b> (tối đa <b>10 cấp</b>).
+        <b>Cấp 3</b> mở <b>ALT-FIRE</b> (bắn phụ chuột phải / E) · <b>cấp 6</b> mở <b>PERK</b> riêng từng khẩu.</p>
+        <div id="upList" class="market-list short"></div>
+        <div class="btn-row">
+          <button id="btnMarketBack" class="btn">‹ Về menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ⌨️ PHÍM CHỨC NĂNG — tự đổi phím ═══ -->
+    <div id="keys" class="screen hidden">
+      <div class="panel market-panel">
+        <h2>⌨️ PHÍM CHỨC NĂNG</h2>
+        <p class="market-note">Bấm vào ô phím rồi nhấn phím <b>MỚI</b> muốn dùng.
+        Phím bị trùng sẽ tự <b>gỡ khỏi hành động cũ</b> (1 phím = 1 việc).
+        <b>ESC</b> = huỷ lượt học phím · nút 🔄 trả mọi thứ về mặc định.</p>
+        <div id="keysList" class="keys-list"></div>
+        <div class="btn-row">
+          <button id="btnKeysReset" class="btn">🔄 Mặc định</button>
+          <button id="btnKeysBack" class="btn">‹ Về menu</button>
+        </div>
       </div>
     </div>
 
@@ -60,9 +95,7 @@
         <div class="tips-body">
           <div class="tip-block">
             <h3>🎮 Điều khiển</h3>
-            <p>A / D chạy · W hoặc Space nhảy (nhấn 2 lần = nhảy đôi) · S ngồi thấp ·
-            Chuột ngắm + bắn · R nạp đạn · G lụm súng/hộp đạn · B cửa hàng (giữa wave) ·
-            1–0 / lăn chuột đổi súng · T đường ngắm · M tắt tiếng · Esc tạm dừng</p>
+            <p id="tipControlsP"></p>
           </div>
           <div class="tip-block">
             <h3>📦 Đạn — không bắn hoài được đâu!</h3>
@@ -86,11 +119,53 @@
             đạn xuyên, tiền ×2, hồi đầy máu, giáp nẹp −30% sát thương nhận.</p>
           </div>
           <div class="tip-block">
+            <h3>👑 Boss mỗi 5 wave</h3>
+            <p>Wave 5, 10, 15... có <b>BOSS</b> 3 phase — bắn vào <b>chấm vàng</b> = ×2 sát thương,
+            chấm vàng <b>đổi chỗ</b> theo phase: <b>đầu → ngực → chân</b>.
+            Boss đổi phase bị <b>choáng 1.2s</b> — dồn đạn ngay!
+            P1 ném loạt 3 (vòng đỏ báo trước) · P2 gọi crawler (dọn lính trước) ·
+            P3 lao nhanh nhảy đè (giữ khoảng cách). Đánh gục → vàng lớn + <b>modifier HIẾM</b>.</p>
+          </div>
+          <div class="tip-block">
             <h3>👹 Nhận mặt quái</h3>
             <p><b>Tank giáp</b> (wave 3+): đạn trúng ngực chỉ 20% sát thương —
             đi vòng <b>bắn LƯNG</b> hoặc headshot! <b>Kamikaze</b> (wave 4+): lao nhanh
             nhấp nháy đỏ → nổ 45 dmg vùng; bị bắn chết CŨNG NỔ — bắn từ xa kẻo vạ.
             <b>Sniper</b> (wave 5+): tia đỏ ngắm 0.7s rồi bắn 25 dmg — thấy tia đỏ là né!</p>
+          </div>
+          <div class="tip-block">
+            <h3>🏪 Market — vàng tích luỹ</h3>
+            <p>Vàng kiếm ở Sinh tồn được <b>lưu vĩnh viễn</b>. Mua ở menu chính:
+            <b>giáp −15%</b> đòn nhận (600💰), <b>nón</b> chống headshot ×2→×1.3 (450💰),
+            <b>giày +12%</b> tốc chạy (300💰), <b>bao tay</b> nạp nhanh 30% (300💰),
+            <b>khiên ánh sáng</b> hấp thụ 100 sát thương rồi vỡ (250💰 — xài 1 lần).</p>
+          </div>
+          <div class="tip-block">
+            <h3>🔧 Nâng cấp súng + ⓶ Bắn phụ (alt-fire)</h3>
+            <p>Mỗi khẩu súng <b>nâng cấp 10 cấp</b> ở Market: mỗi cấp <b>+5% dame · +5% băng ·
+            nạp nhanh 2.5%</b> (max = +50% dame). <b>Cấp 3 mở BẮN PHỤ</b>: bấm <b>chuột phải / E</b> — mỗi khẩu một kiểu
+            (liên thanh, đạn xuyên, xịt quạt, slug, bộ ba, nổ giữa đường, cầu nảy tường...
+            <b>minigun là GIỮ</b> để quay nòng cho đạn tập trung). <b>Cấp 6 mở PERK</b> riêng:
+            shotgun +1 viên bi, AK đạn xuyên, sniper headshot ×2.5, minigun băng đôi...</p>
+          </div>
+          <div class="tip-block">
+            <h3>🏃 Dash + 💣 Lựu đạn + 🛢️ Vật thể + 🎲 Event</h3>
+            <p><b>DASH (Shift)</b>: lướt nhanh 1 nhịp né đạn — <b>bất tử 0.12s</b> lúc lướt, hồi 0.85s.
+            <b>LỰU ĐẠN (Q)</b>: ném theo chuột quỹ đạo cong, nổ chạm đất/tường/quái — <b>trúng CẢ HAI BÊN</b>, hồi 6s.
+            <b>Thùng nổ 🛢️ / thùng gỗ 📦 / ống ga 🔧</b> rải trên map Sinh tồn: <b>che đạn</b> như cover,
+            bắn nát được — thùng nổ dãn <b>dây chuyền</b>, thùng gỗ vỡ <b>rơi vàng</b> (đi xuyên qua được).
+            <b>Event ngẫu nhiên</b> 30% sau khi dọn wave: 🌧️ mưa axit · 🌫️ sương mù (tầm nhìn 300px) ·
+            🏃 quái nhanh +25% · 💰 mùa vàng +50%.</p>
+          </div>
+          <div class="tip-block">
+            <h3>🗺️ Bản đồ Roguelite — chọn đường đi của bạn</h3>
+            <p>Dọn mỗi wave: chọn 1 trong các LÁ (bấm <b>1/2/3</b> hoặc click):
+            <b>⚔️ Gặp đội quân</b> (thường) · <b>👹 Đội ELITE</b> (quái trâu ×1.35 · nhanh · +40% số lượng —
+            đổi lại <b>vàng ×1.6, điểm ×1.5</b>) · <b>🏪 Tiệm nghỉ</b> (mua đồ KHÔNG đếm ngược — bấm B
+            đóng tiệm để đi tiếp) · <b>❤️ Ổ oasis</b> (hồi ngay 50% máu + 60-120💰).
+            👉 Lá đầu luôn là lá ĐÁNH, không nghỉ 2 lần liền. 👑 <b>BOSS</b> hiện theo chu kỳ
+            <b>5 trận ĐÁNH</b> — vào tiệm không làm trôi chu kỳ! Chọn lá xong mới chọn
+            modifier 1/2/3 cho trận đó.</p>
           </div>
           <div class="tip-block">
             <h3>🎯 Nấp &amp; sníp</h3>
@@ -108,6 +183,13 @@
           <button id="btnTipsBack" class="btn">‹ Về menu</button>
         </div>
       </div>
+    </div>
+
+    <!-- ═══ 🗺️ BẢN ĐỒ CHỌN ĐƯỜNG (roguelite — hiện giữa màn khi dọn wave) ═══ -->
+    <div id="nodePanel" class="hidden">
+      <h2 class="node-title">🗺️ CHỌN ĐƯỜNG ĐI</h2>
+      <p class="node-sub">Bấm <b>1 / 2 / 3</b> hoặc click thẻ — đồng hồ nghỉ đang đóng băng, cứ thư giãn mà chọn</p>
+      <div id="nodeList"></div>
     </div>
 
     <!-- ═══ PAUSE ═══ -->
@@ -160,7 +242,7 @@
   <script src="js/game/combatants.js" defer></script>
   <script src="js/entities/stickman.js" defer></script>
   <script src="js/weapons/weapons.js" defer></script>
-  <script src="js/entities/bullet.js" defer></script>
+  <script src="js/weapons/gunup.js" defer></script>  <script src="js/entities/bullet.js" defer></script>
   <script src="js/entities/particles.js" defer></script>
   <script src="js/entities/monster.js" defer></script>
   <script src="js/entities/bot.js" defer></script>
@@ -168,8 +250,12 @@
   <script src="js/game/match.js" defer></script>
   <script src="js/game/pickups.js" defer></script>
   <script src="js/game/trees.js" defer></script>
+  <script src="js/world/props.js" defer></script>
   <script src="js/entities/player.js" defer></script>
   <script src="js/ui/shop.js" defer></script>
+  <script src="js/ui/market.js" defer></script>
+  <script src="js/ui/keybinds.js" defer></script>
+  <script src="js/ui/nodes.js" defer></script>
   <script src="js/ui/menu.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

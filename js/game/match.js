@@ -75,8 +75,8 @@ window.Match = {
         p.hp = p.maxHp;
         p.dead = false; // sống lại — đạn địch có thể trúng tiếp
         p.airJumps = 0;
-        // nạp đầy đạn các SÚNG ĐANG CÓ (chưa lụm thì chưa có đạn)
-        Weapons.list.forEach((w, i) => { if (p.owned.has(w.id)) p.mags[i] = w.mag; });
+        // nạp đầy đạn các SÚNG ĐANG CÓ (chưa lụm thì chưa có đạn) — 🔧 theo băng nâng cấp
+        Weapons.list.forEach((w, i) => { if (p.owned.has(w.id)) p.mags[i] = (window.GunUp ? GunUp.mag(w) : w.mag); });
         Particles.smoke(sp.x, sp.y - 20, 4);
       }
     }

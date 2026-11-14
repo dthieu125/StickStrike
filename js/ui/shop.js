@@ -51,9 +51,10 @@ window.Shop = {
       p.money -= item.price;
       Weapons.list.forEach((w, i) => {
         if (!p.owned.has(w.id)) return;
-        p.mags[i] = w.mag;
+        const magSize = (window.GunUp ? GunUp.mag(w) : w.mag); // 🔧 băng đã nâng cấp
+        p.mags[i] = magSize;
         // súng LỤM (dự trữ hữu hạn) được bồi đủ trần dự trữ luôn
-        if (p.spare[i] !== Infinity) p.spare[i] = w.mag * Config.AMMO.SPARE_CAP;
+        if (p.spare[i] !== Infinity) p.spare[i] = magSize * Config.AMMO.SPARE_CAP;
       });
       showToast('Đạn sung túc!');
     } else if (item.kind === 'medkit') {
@@ -124,7 +125,7 @@ window.Shop = {
       }
     });
 
-    // nút ra trận + đồng hồ
+    // nút ra trận + đồng hồ (🏪 tiệm nghỉ: đồng hồ ĐÓNG BĂNG → đổi chữ báo "chọn đường")
     const btn = { x: x0 + W / 2 - 110, y: y0 + H - 52, w: 220, h: 36 };
     this.rows.push({ ...btn, action: 'close' });
     const hoverB = mouse.x >= btn.x && mouse.x <= btn.x + btn.w && mouse.y >= btn.y && mouse.y <= btn.y + btn.h;
@@ -135,8 +136,19 @@ window.Shop = {
     ctx.textAlign = 'center';
     ctx.font = '700 15px "Segoe UI", system-ui, sans-serif';
     ctx.fillStyle = '#e8fdff';
-    ctx.fillText('RA ĐÁNH TIẾP (' + Math.ceil(Wave.timer) + 's)', Config.CANVAS_W / 2, btn.y + 8);
+    const restingShop = window.Wave && Wave.resting;
+    ctx.fillText(restingShop ? 'XONG? ĐÓNG TIỆM → CHỌN ĐƯỜNG' : 'RA ĐÁNH TIẾP (' + Math.ceil(Wave.timer) + 's)',
+      Config.CANVAS_W / 2, btn.y + 8);
     ctx.textAlign = 'left';
+    if (restingShop) {
+      ctx.textAlign = 'center';
+      ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255,209,102,0.85)';
+      const bkey = (window.Input && Input.boundKey) ? Input.boundKey('buy') : 'B';
+      ctx.fillText('hoặc bấm ' + bkey + ' — tiệm nghỉ KHÔNG có đồng hồ, cứ thoải mái mà xem đồ',
+        Config.CANVAS_W / 2, btn.y + btn.h + 8);
+      ctx.textAlign = 'left';
+    }
   },
 
   // trả về true nếu click vừa được "tiêu" bởi cửa hàng

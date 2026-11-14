@@ -13,7 +13,7 @@ window.Menu = {
     this.game = game;
     const $ = (id) => document.getElementById(id);
     this.el = {
-      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'),
+      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'),
       mapName: $('mapName'), records: $('records'), hatBtn: $('hatBtn'),
       goTitle: $('goTitle'), goStats: $('goStats'),
       meTitle: $('meTitle'), meStats: $('meStats'),
@@ -22,8 +22,11 @@ window.Menu = {
     // nút menu chính
     $('btnWave').onclick = () => { AudioFX.click(); this.game.startWave(); };
     $('btnDM').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
+    $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
+    $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnTips').onclick = () => { AudioFX.click(); this.show('tips'); };
     $('btnTipsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
+    $('btnKeys').onclick = () => { AudioFX.click(); this.show('keys'); };
     $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.dmMaps.length - 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
     $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
 
@@ -89,19 +92,48 @@ window.Menu = {
     this.el.mapName.textContent = Maps[this.dmMaps[this.mapIndex]].name;
   },
 
+  /* Cập nhật CHỮ GỢI Ý PHÍM theo bind hiện tại — đổi phím ở menu là chữ tự đổi theo */
+  refreshKeyHints() {
+    const K = (a) => Input.boundKey(a);
+    const h1 = document.getElementById('hintKeys');
+    if (h1) {
+      h1.innerHTML = K('left') + ' / ' + K('right') + ' chạy · ' + K('jump') + ' nhảy x2 · ' + K('crouch') + ' ngồi' +
+        '<br>Chuột ngắm bắn · ' + K('reload') + ' nạp · ' + K('pickup') + ' lụm súng';
+    }
+    const h2 = document.getElementById('tipControlsP');
+    if (h2) {
+      h2.innerHTML = K('left') + ' / ' + K('right') + ' chạy · ' + K('jump') + ' nhảy (nhấn 2 lần = nhảy đôi) · ' +
+        K('crouch') + ' ngồi thấp · <b>' + K('prone') + ' NẰM</b> (hitbox bé · bắn tĩnh −45% tản đạn · đi chậm) · ' +
+        'Chuột ngắm + bắn · ' + K('reload') + ' nạp đạn · <b>' + K('altfire') + ' / chuột phải BẮN PHỤ</b> (cần nâng cấp súng cấp 3) · ' +
+        '<b>' + K('dash') + ' DASH</b> né đạn (bất tử lúc lướt) · <b>' + K('grenade') + ' LỰU ĐẠN</b> (nổ trúng cả 2 bên!) · ' +
+        K('pickup') + ' lụm súng/hộp đạn · ' + K('buy') +
+        ' cửa hàng (giữa wave) · 1–0 / lăn chuột đổi súng · ' + K('guide') + ' đường ngắm · ' + K('mute') +
+        ' tắt tiếng · ' + K('pause') + ' tạm dừng. <b>Đổi được hết</b> ở menu ⌨️ PHÍM CHỨC NĂNG!';
+    }
+    const h3 = document.getElementById('creditKeys');
+    if (h3) {
+      h3.innerHTML = K('pause') + ': tạm dừng · ' + K('guide') + ': đường ngắm mờ · ' + K('mute') +
+        ': tắt tiếng — làm với ❤️ để giải trí sau giờ làm';
+    }
+  },
+
   refreshScores() {
     const bw = localStorage.getItem('ss_bestWave') || 0;
     const bs = localStorage.getItem('ss_bestScore') || 0;
-    this.el.records.textContent = `🏆 Kỷ lục của bạn: Wave ${bw} · ${bs} điểm`;
+    let line = `🏆 Kỷ lục: Wave ${bw} · ${bs} điểm`;
+    // thống kê VÀNG kiếm được từ Sinh tồn (yêu cầu người chơi)
+    if (window.Gold) line += ` · 💰 đã kiếm tổng ${Gold.earned} vàng`;
+    this.el.records.textContent = line;
   },
 
   show(panel) {
-    ['menu', 'pause', 'gameover', 'matchend', 'tips'].forEach((id) => {
+    Market.hide(); KeySettings.hide(); // rời chợ / bảng phím nếu đang mở
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys'].forEach((id) => {
       this.el[id].classList.toggle('hidden', id !== panel);
     });
   },
   hideAll() {
-    ['menu', 'pause', 'gameover', 'matchend', 'tips'].forEach((id) => this.el[id].classList.add('hidden'));
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys'].forEach((id) => this.el[id].classList.add('hidden'));
   },
 
   showGameOver(wave, score, waveRecord, scoreRecord) {
@@ -138,6 +170,7 @@ window.Menu = {
           cx: 100, feetY: 188, h: 62,
           facing: 1, runPhase: this.previewPhase, moving: true, onGround: true,
           crouch: false, color: Config.PLAYER.COLOR, hat: Config.PLAYER.HAT, aimAngle: null,
+          visor: true, glow: window.Gear && Gear.active(), // nhìn thấy ngay đồ ngầu trong menu
         });
       }
       requestAnimationFrame(loop);

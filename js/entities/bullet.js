@@ -21,9 +21,13 @@ window.Bullets = {
 
     const enemies = Combatants.hostiles(shooterTeam);
 
-    // modifier wave "ĐẠN XUYÊN +1": đạn người chơi xuyên thêm 1 mục tiêu
-    let pierceLeft = (!w.pierceTargets && shooterTeam === 'P'
-      && window.Wave && Wave.mods && Wave.mods.pierce && Wave.state !== 'idle') ? 1 : 0;
+    // xuyên đạn: perk ĐẠN AP (rifle lv5) xuyên 1 bia · modifier wave "ĐẠN XUYÊN" thêm N bia
+    let pierceLeft = (!w.pierceTargets && shooterTeam === 'P') ? (w.pierceBase || 0) : 0;
+    if (pierceLeft < (Config.UPGRADE.MAX_LV + 1) // chặn vô lý
+      && !w.pierceTargets && shooterTeam === 'P'
+      && window.Wave && Wave.mods && Wave.mods.pierce && Wave.state !== 'idle') {
+      pierceLeft = Wave.mods.pierce; // modifier đè lên perk (lấy N bia)
+    }
 
     this._rayId++;
     let stopped = false;
@@ -75,6 +79,7 @@ window.Bullets = {
     else if (seamSide === -1) { tracer(x, y, 0, seamY); tracer(Level.pxW, seamY, endX, endY); }
     else tracer(x, y, endX, endY);
     Trees.hitAt(endX, endY, w.damage); // tia dừng tại cây → cây hao mòn dần
+    if (window.Props) Props.hitAt(endX, endY, w.damage); // 🛢️ vật thể phá được cũng hao mòn dần
     Particles.sparks(endX, endY, angle + Math.PI, 4, '#ffce54');
     return { dmg: totalDmg, head: anyHead, kill: killed, x: endX, y: endY };
   },
@@ -85,7 +90,27 @@ window.Bullets = {
       vx: Math.cos(angle) * w.projSpeed,
       vy: Math.sin(angle) * w.projSpeed,
       dist: 0,
+      bouncesLeft: w.bounce || 0, // plasma CẦU NẢY: số lần dội tường còn lại
     });
+  },
+
+  /* 💣 NÉM LỰU ĐẠN — văng có QUỸ ĐẠO CONG (trọng lực riêng nhẹ hơn người),
+   * chạm đất/tường/quái/vật thể là nổ; trúng CẢ HAI BÊN (đội 'X' = trung lập). */
+  throwGrenade(x, y, angle, dist, thrower) {
+    const G = Config.GRENADE;
+    const sp = Math.max(G.THROW_MIN, Math.min(G.THROW_MAX, dist || 400));
+    this.projectiles.push({
+      x, y, angle,
+      w: { id: 'grenade', kind: 'proj', damage: G.DAMAGE, explodeRadius: G.RADIUS, shakeOnBoom: 5, projSpeed: sp },
+      shooterTeam: 'X', // trung lập: nổ trúng ai đứng gần cũng dính (kể cả người ném!)
+      noHit: thrower,   // nhưng KHÔNG nổ ngay trong tay người ném
+      vx: Math.cos(angle) * sp,
+      vy: Math.sin(angle) * sp - G.LIFT, // đẩy lên 1 nhịp cho quỹ đạo cong
+      dist: 0,
+      bouncesLeft: 0,
+      g: G.GRAV, // đạn có trọng lực
+    });
+    AudioFX.click(); // tiếng bật chốt
   },
 
   /* nổ tại (x,y): sát thương vùng cho kẻ địch + hiệu ứng + rung + tiếng
@@ -121,6 +146,7 @@ window.Bullets = {
     }
     Particles.explosion(x, y, w.explodeRadius);
     Trees.explodeAt(x, y, w.explodeRadius); // vụ nổ quét qua → cây trong bán kính bay màu cả cây
+    if (window.Props && Props.explodeAt(x, y, w.explodeRadius)); // 🛢️ vật thể trong bán kính vỡ luôn (dãn nổ dây chuyền)
     Camera.addShake(w.shakeOnBoom || 6);
     AudioFX.explode();
   },
@@ -148,12 +174,29 @@ window.Bullets = {
 
       for (let s = 0; s < SUB; s++) {
         b.x += b.vx * sdt; b.y += b.vy * sdt;
+        if (b.g) b.vy += b.g * sdt; // 💣 lựu đạn / 🌧️ mưa axit: rơi theo trọng lực
         b.dist += w.projSpeed * sdt;
         // map vòng tròn: đạn vượt biên → vòng qua mép kia rồi mới nổ
         if (b.x >= Level.pxW) b.x -= Level.pxW;
         else if (b.x < 0) b.x += Level.pxW;
-        if (Level.blocksShotAt(b.x, b.y)) boom = true; // tường + bậc thềm đều dội nổ
+        if (Level.blocksShotAt(b.x, b.y)) {
+          // 🔧 CẦU NẢY (plasma alt): còn lượt dội → phản xạ theo mặt tường
+          if (w.bounce && b.bouncesLeft > 0) {
+            b.bouncesLeft--;
+            const prevX = b.x - b.vx * sdt * 2, prevY = b.y - b.vy * sdt * 2;
+            const freeX = !Level.blocksShotAt(prevX, b.y); // lùi ngang được → tường dọc → dội ngang
+            const freeY = !Level.blocksShotAt(b.x, prevY); // lùi dọc được → tường ngang → dội dọc
+            if (freeX) b.vx = -b.vx;
+            if (freeY) b.vy = -b.vy;
+            if (!freeX && !freeY) { b.vx = -b.vx; b.vy = -b.vy; }
+            b.x += b.vx * sdt * 3; b.y += b.vy * sdt * 3; // nhảy ra khỏi tường theo hướng mới
+            AudioFX._tone(700, 950, 0.05, 'square', 0.07); // tiếng "ceng"
+            continue; // sống tiếp — nổ khi hết lượt dội hoặc trúng địch
+          }
+          boom = true; // tường + bậc thềm đều dội nổ
+        }
         for (const c of Combatants.hostiles(b.shooterTeam)) {
+          if (b.noHit && c === b.noHit) continue; // lựu đạn bỏ qua người ném
           if (b.x >= c.x && b.x <= c.x + c.w && b.y >= c.y && b.y <= c.y + c.h) boom = true;
         }
         if (boom) { bx = b.x; by = b.y; break; }
@@ -161,7 +204,8 @@ window.Bullets = {
 
       if (!boom) {
         Particles.trail(b.x, b.y, w);
-        if (b.dist > 1800) boom = true;
+        if (w.airAt && b.dist >= w.airAt) { boom = true; bx = b.x; by = b.y; } // 🔧 KÍCH NỔ GIÓ: nổ giữa đường
+        if (b.dist > 1800) { boom = true; bx = b.x; by = b.y; }
       }
       if (boom) { this.explode(bx, by, w, b.shooterTeam); this.projectiles.splice(i, 1); }
     }
@@ -210,12 +254,19 @@ window.Bullets = {
       ctx.translate(b.x, b.y);
       ctx.rotate(Math.atan2(b.vy, b.vx));
       if (b.w.id === 'plasma') {
+        const hot = !!b.w.bounce; // CẦU NẢY: nóng cam — khác cầu plasma thường
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 10);
-        g.addColorStop(0, 'rgba(220,255,255,0.95)');
-        g.addColorStop(0.45, 'rgba(84,224,255,0.8)');
-        g.addColorStop(1, 'rgba(84,224,255,0)');
+        g.addColorStop(0, hot ? 'rgba(255,240,220,0.95)' : 'rgba(220,255,255,0.95)');
+        g.addColorStop(0.45, hot ? 'rgba(255,150,80,0.85)' : 'rgba(84,224,255,0.8)');
+        g.addColorStop(1, hot ? 'rgba(255,150,80,0)' : 'rgba(84,224,255,0)');
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+      } else if (b.w.id === 'grenade') { // 💣 lựu đạn: viên đen + chớp đỏ khi sắp bay xa
+        ctx.rotate(0); // lăn tròn
+        ctx.fillStyle = '#2c3540';
+        ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = (Math.floor(b.dist / 60) % 2) ? '#ff4d4d' : '#8b1a1a'; // đèn đỏ nhấp nháy
+        ctx.beginPath(); ctx.arc(0, -2, 1.8, 0, Math.PI * 2); ctx.fill();
       } else if (b.w.acid) { // giọt axit quái phun
         ctx.fillStyle = '#8ef27a';
         ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();

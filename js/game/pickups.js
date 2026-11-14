@@ -291,7 +291,8 @@ window.Pickups = {
           continue; // không tiêu hộp
         }
         if (p.spare[idx] !== Infinity) {
-          p.spare[idx] = Math.min(pk.w.mag * Config.AMMO.SPARE_CAP, p.spare[idx] + pk.amount);
+          const cap = (window.GunUp ? GunUp.mag(pk.w) : pk.w.mag) * Config.AMMO.SPARE_CAP;
+          p.spare[idx] = Math.min(cap, p.spare[idx] + pk.amount);
         }
         showToast('📦 +' + pk.amount + ' đạn ' + pk.w.short);
         pk.taken = true;
@@ -302,14 +303,15 @@ window.Pickups = {
 
       if (!p.owned.has(pk.w.id)) {
         p.owned.add(pk.w.id);
-        p.mags[idx] = pk.w.mag;
+        p.mags[idx] = (window.GunUp ? GunUp.mag(pk.w) : pk.w.mag); // 🔧 băng đã nâng cấp
         p.spare[idx] = 0; // súng LỤM: chỉ có băng đang cầm — đạn thêm phải đi kiếm
         Player.selectWeapon(p, idx); // active đúng khẩu vừa lụm
         showToast('🎁 Đã lụm ' + pk.w.name + '! (đạn giới hạn — nhặt lại/lục hộp để bồi)');
       } else {
-        p.mags[idx] = pk.w.mag;       // băng đầy lại
-        p.spare[idx] += pk.w.mag;     // +1 băng dự trữ
-        showToast('💧 ' + pk.w.name + ': đạn đầy + dự trữ +' + pk.w.mag);
+        const magSize = (window.GunUp ? GunUp.mag(pk.w) : pk.w.mag);
+        p.mags[idx] = magSize;      // băng đầy lại
+        p.spare[idx] += magSize;    // +1 băng dự trữ
+        showToast('💧 ' + pk.w.name + ': đạn đầy + dự trữ +' + magSize);
       }
       pk.taken = true;
       pk.respawnT = this.RESPAWN;
@@ -400,11 +402,13 @@ window.Pickups = {
         ctx.textAlign = 'left';
       }
 
-      // gợi ý "G" khi người chơi lại gần (tính cả khoảng cách vòng qua mép map)
+      // gợi ý phím LỤM khi người chơi lại gần (tính cả khoảng cách vòng qua mép map)
+      // — lấy phím thật đang bind (đổi ở menu ⌨️ là chữ tự đổi theo)
       if (p && Math.hypot(Level.wrapDx(p.x + p.w / 2 - pk.x), p.y + p.h / 2 - pk.y) < this.PICK_R + 14) {
+        const k = (window.Input && Input.boundKey) ? Input.boundKey('pickup') : 'G';
         ctx.font = '700 13px "Segoe UI", system-ui, sans-serif';
         ctx.fillStyle = '#7df3ff';
-        ctx.fillText(pk.kind === 'ammo' ? '[G] Lục đạn' : '[G] Lụm', pk.x, pk.y - 44 + bobY);
+        ctx.fillText('[' + k + '] ' + (pk.kind === 'ammo' ? 'Lục đạn' : 'Lụm'), pk.x, pk.y - 44 + bobY);
       }
       ctx.textAlign = 'left';
     }

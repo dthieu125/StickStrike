@@ -89,7 +89,8 @@ window.Level = {
   blocksShotAt(x, y) {
     const ch = this.tileAt(Math.floor(x / this.T), Math.floor(y / this.T));
     if (ch === '#' || ch === '-') return true;
-    return window.Trees ? Trees.blocksShotAt(x, y) : false;
+    if (window.Trees && Trees.blocksShotAt(x, y)) return true;
+    return window.Props ? Props.blocksShotAt(x, y) : false;
   },
 
   rectOverlapsSolid(x, y, w, h) {

@@ -7,7 +7,7 @@ window.Match = {
   scoreA: 0, scoreB: 0, state: 'idle', // idle | playing | ended
   mapDef: null,
 
-  start(mapDef) {
+  start(mapDef, perTeam) {
     this.mapDef = mapDef;
     this.scoreA = 0; this.scoreB = 0;
     this.state = 'playing';
@@ -19,11 +19,16 @@ window.Match = {
 
     // CẢ 2 ĐỘI đều chỉ có súng lục lúc đầu — công bằng như người chơi,
     // súng tốt nằm rải trên map, bot tự đi lục (qua Pickups)
-    for (let i = 0; i < N - 1; i++) {
+    // 🌐 mạng: truyền perTeam (số bot MỖI ĐỘI) — mỗi đội 1 slot là NGƯỜI THẬT
+    //   • chơi đơn: perTeam bỏ trống → đội A có N-1 bot (bạn chiếm 1 slot), đội B đủ N
+    //   • guest dựng view: perTeam = 0 (bot thật do snapshot máy host dựng lại)
+    const nA = (perTeam != null) ? perTeam : N - 1;
+    const nB = (perTeam != null) ? perTeam : N;
+    for (let i = 0; i < nA; i++) {
       const sp = this.spawnPoint('A');
       Bots.spawn('A', sp.x, sp.y, 'pistol', colors[4]); // xanh lá
     }
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < nB; i++) {
       const sp = this.spawnPoint('B');
       Bots.spawn('B', sp.x, sp.y, 'pistol', '#f43f5e');
     }
@@ -37,39 +42,45 @@ window.Match = {
     return { x: s[0], y: s[1] };
   },
 
+  /* đủ điểm thắng chưa? → kết thúc + hiện bảng kết quả (gọi từ onKill lẫn khi người gục) */
+  _checkEnd() {
+    if (this.scoreA >= Config.DM.WIN_KILLS || this.scoreB >= Config.DM.WIN_KILLS) {
+      this.state = 'ended';
+      const playerWon = this.scoreA > this.scoreB;
+      Menu.showMatchEnd(playerWon, this.scoreA, this.scoreB);
+      return true;
+    }
+    return false;
+  },
+
   onKill(shooterTeam) {
     if (this.state !== 'playing') return;
     if (shooterTeam === 'A') this.scoreA++;
     else if (shooterTeam === 'B') this.scoreB++;
     Time.hitstop(0.05);
-
-    if (this.scoreA >= Config.DM.WIN_KILLS || this.scoreB >= Config.DM.WIN_KILLS) {
-      this.state = 'ended';
-      const playerWon = this.scoreA > this.scoreB;
-      Menu.showMatchEnd(playerWon, this.scoreA, this.scoreB);
-    }
+    this._checkEnd();
   },
 
-  // người chơi gục → đợi hồi sinh (nếu trận chưa kết thúc)
+  // người gục → đợi hồi sinh (nếu trận chưa kết thúc)
+  // 🤝 co-op/versus mạng: quét TẤT CẢ người — ai gục thì ĐỘI ĐỊCH +1 điểm,
+  // hồi sinh tại spawn ĐỘI MÌNH (chơi đơn: chỉ có người đội A — đúng behavior cũ)
   update(dt) {
     if (this.state !== 'playing') return;
-    const p = Player.obj;
-    if (p.hp <= 0) {
+    for (const p of Player.list) {
+      if (p.hp > 0) continue;
+      const enemy = p.team === 'A' ? 'B' : 'A';
       if (!p.deadTimer) {
         p.deadTimer = Config.DM.RESPAWN;
-        // đội đối phương ăn điểm khi "hạ" được bạn
-        this.scoreB++;
+        // đội đối phương ăn điểm khi "hạ" được người này
+        if (enemy === 'A') this.scoreA++; else this.scoreB++;
         Particles.poof(p.x + p.w / 2, p.y + p.h / 2);
         Level.splatter(p.x + p.w / 2, p.y + p.h / 2, 0, true);
-        if (this.scoreB >= Config.DM.WIN_KILLS) {
-          this.state = 'ended';
-          Menu.showMatchEnd(false, this.scoreA, this.scoreB);
-        }
+        if (this._checkEnd()) return;
       }
       p.deadTimer -= dt;
       if (p.deadTimer <= 0) {
         p.deadTimer = 0;
-        const sp = this.spawnPoint('A');
+        const sp = this.spawnPoint(p.team);
         p.x = sp.x; p.y = sp.y - 52;
         p.vx = 0; p.vy = 0;
         p.hp = p.maxHp;

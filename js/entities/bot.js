@@ -51,6 +51,8 @@ window.Bots = {
           this.dead = true;
           this.respawnT = Config.DM.RESPAWN;
           Particles.poof(this.x + this.w / 2, this.y + this.h / 2);
+          // 🌐 mạng: bot chết trên máy host → máy guest cũng thấy khói bay
+          if (window.Net && Net.mode === 'host') Net.fx({ k: 'poof', x: this.x + this.w / 2, y: this.y + this.h / 2 });
           Match.onKill(shooterTeam);
         }
         return dmg;

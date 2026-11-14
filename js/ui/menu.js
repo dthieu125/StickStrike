@@ -47,6 +47,11 @@ window.Menu = {
       AudioFX.click();
       if (window.Net && Net.mode === 'host' && Net.peer) this.game.startWave();
     };
+    // ⚔️ máy chủ bấm ĐỐI ĐẦU khi đã đủ 2 người — mỗi đội 1 người thật + bot đi kèm
+    $('btnNetDM').onclick = () => {
+      AudioFX.click();
+      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startNetDM(this.dmMaps[this.mapIndex]);
+    };
     $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
@@ -172,10 +177,13 @@ window.Menu = {
       }
       let s = Net.status || 'Đang chờ...';
       if (Net.mode === 'host') s = Net.peer
-        ? '✅ Bạn 2 ĐÃ VÀO PHÒNG — bấm SINH TỔN để bắt đầu!'
+        ? '✅ Bạn 2 ĐÃ VÀO PHÒNG — bấm SINH TỔN hoặc ĐỐI ĐẦU để bắt đầu!'
         : '✅ Phòng đã mở — chờ bạn 2 vào (máy 2 gõ IP rồi bấm VÀO PHÒNG)...';
+      const ready = Net.mode === 'host' && Net.peer;
       this.el.netStatus.textContent = s;
-      this.el.netStart.classList.toggle('hidden', !(Net.mode === 'host' && Net.peer));
+      this.el.netStart.classList.toggle('hidden', !ready);
+      const dmBtn = document.getElementById('btnNetDM');
+      if (dmBtn) dmBtn.classList.toggle('hidden', !ready);
     }, 300);
   },
 
@@ -196,6 +204,9 @@ window.Menu = {
     this.el.meTitle.textContent = won ? '🏆 ĐỘI BẠN THẮNG!' : '☠️ THUA RỒI!';
     this.el.meTitle.className = won ? 'win-title' : 'lose-title';
     this.el.meStats.innerHTML = `Tỷ số cuối: <b>${a} — ${b}</b> (cần ${Config.DM.WIN_KILLS} kill)`;
+    // 🌐 co-op/đối đầu: chỉ máy CHỦ mới "đánh lại" được (máy 2 phải đợi host)
+    const rematch = document.getElementById('btnRematch');
+    if (rematch) rematch.classList.toggle('hidden', window.Net && Net.mode === 'guest');
     this.show('matchend');
   },
 

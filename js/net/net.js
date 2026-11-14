@@ -65,7 +65,7 @@ window.Net = {
       try { this.ws.send(JSON.stringify({ t: 'bye' })); } catch (e) { /* bỏ qua */ }
     }
     this.mode = 'off'; this.peer = false; this.status = ''; this._fxQueue = [];
-    this._monMap = {}; this.snap = null;
+    this._monMap = {}; this._botMap = {}; this.snap = null;
     if (this.ws) { try { this.ws.close(); } catch (e) { /* bỏ qua */ } }
     this.ws = null; this.onMsg = null;
   },
@@ -122,9 +122,10 @@ window.Net = {
 
   /* ═══ SNAPSHOT — "ảnh chụp" thế giới của host để máy guest dựng lại ═══
    * Chụp ĐỦ thứ guest cần để vẽ: camera, wave/bản đồ, modifier, tiệm,
-   * người chơi (kể cả túi tiền/gear/đang được cứu), quái theo id,
-   * vệt đạn + đạn bay, đồ lụm/vật thể, rồi hàng hiệu ứng đang gom. */
+   * người chơi (kể cả túi tiền/gear/đang được cứu), quái + BOT (đối đầu) theo id,
+   * vệt đạn + đạn bay, đồ lụm/vật thể/túi máu, điểm số trận, rồi hàng hiệu ứng đang gom. */
   _monSeq: 0,
+  _botSeq: 0,
 
   /* gom 1 object thành "dữ liệu trần" — bỏ HẲN hàm/method, Set→mảng, ∞→-1 */
   _snapObj(o) {
@@ -164,6 +165,22 @@ window.Net = {
         delete s.lastHitBy; // tham chiếu entity — không gửi được (guest tự tính lại)
         return s;
       }),
+      /* 🆚 đối đầu: bot cũng chụp theo id như quái — guest dựng lại để vẽ + thấy chúng bắn nhau */
+      bots: (window.Match && Match.state !== 'idle' ? Bots.list : []).map((b) => {
+        if (!b._netId) b._netId = 'b' + (++this._botSeq);
+        const s = this._snapObj(b);
+        s.id = b._netId;
+        delete s.target; // tham chiếu entity — không gửi được
+        s.weapon = b.weapon ? b.weapon.id : 'pistol'; // object súng → chỉ gửi id
+        return s;
+      }),
+      /* túi máu hồi (DM rải ngẫu nhiên) — guest dựng lại từ đây */
+      health: (window.Pickups ? Pickups.health.map((h) => ({
+        x: Math.round(h.x * 10) / 10, y: Math.round(h.y * 10) / 10,
+        pct: h.pct || 50, bob: h.bob || 0,
+      })) : []),
+      /* điểm số trận đối đầu — guest đọc để vẽ HUD + biết trận kết thúc */
+      match: (window.Match ? { scoreA: Match.scoreA, scoreB: Match.scoreB, state: Match.state } : null),
       tracers: Bullets.tracers.map((tr) => ({ ...tr })),
       proj: Bullets.projectiles.map((b) => ({
         x: b.x, y: b.y, vx: b.vx, vy: b.vy, g: b.g || 0, dist: b.dist || 0,
@@ -200,7 +217,11 @@ window.Net = {
           pickup: inp.isDown('pickup'), altfire: inp.isDown('altfire'),
           dash: inp.isDown('dash'), grenade: inp.isDown('grenade'), buy: inp.isDown('buy'),
         },
-        mx: Math.round(inp.mouse.x), my: Math.round(inp.mouse.y),
+        /* 🌐 gửi chuột theo TOẠ ĐỘ THẾ GIỚI (cộng camera của MÁY MÌNH):
+         *  • co-op  : camera guest = camera host → chính xác như cũ
+         *  • đối đầu: mỗi máy tự theo camera người MÌNH → host thấy đúng chỗ
+         *    bạn 2 đang ngắm trên màn hình của bạn 2 */
+        mx: Math.round(inp.mouse.x + Camera.x), my: Math.round(inp.mouse.y + Camera.y),
         md: inp.mouse.down, mp: inp.mouse.pressed,
         rd: inp.mouse.rdown, rp: inp.mouse.rpressed,
       });
@@ -268,13 +289,53 @@ window.Net = {
         w: pk.wId ? Weapons.list.find((w) => w.id === pk.wId) : null,
         taken: !!pk.taken, respawnT: pk.respawnT || 0, bob: pk.bob || 0,
       }));
-      Pickups.health = []; // wave không dùng túi máu (DM chưa chơi qua mạng)
+      // túi máu hồi (Pickups.health) dựng riêng ở dưới — DM có dùng
     }
     if (window.Props) {
       Props.list = (s.props || []).map((pr) => ({
         type: pr.type, x: pr.x, baseY: pr.baseY, w: pr.w, h: pr.h,
         hp: pr.hp, maxHp: pr.maxHp, gone: !!pr.gone, shake: pr.shake || 0,
       }));
+    }
+
+    /* ── bot đối đầu: map theo id — y hệt cách làm với quái ── */
+    if (s.bots) {
+      const seenB = new Set();
+      for (const sb of s.bots) {
+        seenB.add(sb.id);
+        let b = this._botMap[sb.id];
+        if (!b) {
+          // tạo đúng "hình dạng" object: Bots.spawn trừ đi 10/52 → cộng lại vào đây
+          const wId = sb.weapon || 'pistol';
+          b = Bots.spawn(sb.team, sb.x + 10, sb.y + 52, wId, sb.color);
+          this._botMap[sb.id] = b;
+          b._netId = sb.id;
+        }
+        this._copyFields(b, sb);
+        // tham chiếu súng phải trỏ lại OBJECT thật trong danh sách (copy chỉ gửi id)
+        b.weapon = Weapons.list.find((w) => w.id === (sb.weapon || 'pistol')) || Weapons.list[0];
+      }
+      for (let i = Bots.list.length - 1; i >= 0; i--) {
+        const b = Bots.list[i];
+        if (b._netId && !seenB.has(b._netId)) {
+          Combatants.unregister(b);
+          Bots.list.splice(i, 1);
+          delete this._botMap[b._netId];
+        }
+      }
+    }
+
+    /* ── túi máu hồi (DM) — host rải NGẪU NHIÊN → guest dựng lại từ snapshot ── */
+    if (window.Pickups) {
+      Pickups.health = (s.health || []).map((h) => ({
+        x: h.x, y: h.y, pct: h.pct || 50, bob: h.bob || 0,
+      }));
+    }
+
+    /* ── điểm số trận đối đầu (guest chỉ VẼ, host mới là người tính) ── */
+    if (window.Match && s.match) {
+      Match.scoreA = s.match.scoreA; Match.scoreB = s.match.scoreB;
+      Match.state = s.match.state;
     }
 
     /* ── hiệu ứng/tiếng/tost gom từ host ── */
@@ -299,6 +360,9 @@ window.Net = {
       if (sp.owned) v.owned = new Set(sp.owned);
       if (sp.spare) v.spare = sp.spare.map((x) => (x === -1 ? Infinity : x));
       if (sp.mags) v.mags = sp.mags.slice();
+      // 🆚 đối đầu: giữ MÀU ÁO guest tự chọn — snapshot host gửi màu
+      //   cam (co-op) thì đè mất; màu riêng phải thắng snapshot
+      if (this.mode === 'guest' && v === Player.obj && this._guestColor) v.color = this._guestColor;
     }
   },
 
@@ -329,4 +393,5 @@ window.Net = {
   },
 
   _monMap: {},
+  _botMap: {},
 };

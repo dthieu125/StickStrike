@@ -54,6 +54,31 @@
       AudioFX.startMusic();
       showToast('🤖 Đội ' + Config.DM.WIN_KILLS + ' kill thắng — Lụm súng rải trên map bằng phím G!');
     },
+    /* ⚔️ ĐỐI ĐẦU 1v1 QUA MẠNG (máy host bấm): BẠN vs BẠN 2, mỗi đội có bot như chơi đơn */
+    startNetDM(mapId) {
+      if (!(window.Net && Net.mode === 'host' && Net.peer)) {
+        showToast('❌ Cần 2 người trong phòng mới đối đầu qua mạng được!');
+        return;
+      }
+      AudioFX.ensure();
+      mode = 'dm'; paused = false;
+      mapDef = Maps[mapId];
+      _setupLevel(mapDef);
+      // MÁY HOST = ĐỘI A (xanh lá) · MÁY GUEST = ĐỘI B (đỏ) — mỗi đội 1 người thật
+      const spA = mapDef.spawns.A[0], spB = mapDef.spawns.B[0];
+      Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
+      Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
+      Player.list[1].color = '#f43f5e'; // bạn 2 = ĐỘI B → áo ĐỎ (dù host chọn màu gì)
+      Net.initRemoteInp();            // input ẢNH của bạn 2 bắt đầu từ số 0
+      Net._monMap = {}; Net._botMap = {}; // dựng lại bảng ghép quái + bot theo id
+      Pickups.spawnForMap(mapDef);    // súng + túi máu rải cả map (guest nhận qua snapshot)
+      Trees.spawnForMap(mapDef);      // cây dựng từ mapDef — 2 máy tự dựng GIỐNG nhau
+      Match.start(mapDef, Config.DM.TEAM_SIZE - 1); // mỗi đội bớt 1 bot (slot đó là NGƯỜI THẬT)
+      Net.send({ t: 'start-dm', mapId, teamSize: Config.DM.TEAM_SIZE, winKills: Config.DM.WIN_KILLS });
+      Menu.hideAll();
+      AudioFX.startMusic();
+      showToast('⚔️ BẠN (ĐỘI A xanh) vs BẠN 2 (ĐỘI B đỏ) — ' + Config.DM.WIN_KILLS + ' kill thắng!');
+    },
     resume() {
       paused = false;
       Menu.hideAll();
@@ -108,6 +133,31 @@
     Menu.hideAll();
     AudioFX.startMusic();
     showToast('🤝 Đã vào trận! Bạn là NGƯỜI 2 (màu cam) — giữ gần đồng đội để cứu nhau.');
+  }
+
+  /* ⚔️ MÁY GUEST nhận "bắt đầu ĐỐI ĐẦU" → dựng map + 2 người que đội A/B (chỉ để VẼ) */
+  function _guestStartDM(m) {
+    AudioFX.ensure();
+    mode = 'dm'; paused = false;
+    mapDef = Maps[m.mapId] || Maps.deck;
+    _setupLevel(mapDef);
+    if (m.teamSize) Config.DM.TEAM_SIZE = m.teamSize;   // nhận cấu hình từ máy host
+    if (m.winKills) Config.DM.WIN_KILLS = m.winKills;
+    // 2 entity người que ĐỂ VẼ — THỨ TỰ PHẢI KHỚP host: số 1 đội A (địch), số 2 = MÌNH đội B
+    const spA = mapDef.spawns.A[0], spB = mapDef.spawns.B[0];
+    Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
+    Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
+    Net._guestColor = Player.obj.color; // giữ MÀU ÁO mình chọn (snapshot host sẽ đè, khôi phục sau)
+    Trees.spawnForMap(mapDef);          // cây dựng từ mapDef — giống hệt máy host
+    // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
+    const g = (window.Gear && Gear.state) ? Gear.state : {};
+    Net.send({ t: 'gear', g: { helmet: !!g.helmet, armor: !!g.armor, shield: g.shield || 0 } });
+    Match.start(mapDef, 0);  // KHÔNG tạo bot — bot thật do host mô phỏng, snapshot dựng lại
+    Net._monMap = {}; Net._botMap = {};
+    _gNodeOpen = false; _gOverShown = false; _gEndShown = false;
+    Menu.hideAll();
+    AudioFX.startMusic();
+    showToast('⚔️ ĐỐI ĐẦU! Bạn là ĐỘI B (đỏ) — hạ ' + Config.DM.WIN_KILLS + ' kill để thắng!');
   }
 
   /* MÁY GUEST mỗi frame: bấm chọn lá/modifier/tiệm/lụm → GỬI YÊU CẦU (không tự quyết) */
@@ -193,14 +243,15 @@
       }
     } else if (Net.mode === 'guest') {
       switch (m.t) {
-        case 'start': _guestStart(m); break; // host bắt đầu trận
+        case 'start': _guestStart(m); break; // host bắt đầu trận co-op
+        case 'start-dm': _guestStartDM(m); break; // ⚔️ host bắt đầu trận ĐỐI ĐẦU
         case 'snap': Net.snap = m; break;    // "ảnh chụp" thế giới — tickGuest sẽ áp
       }
     }
   }
 
   /* ============ UPDATE ============ */
-  let _gNodeOpen = false, _gOverShown = false; // (guest) trạng thái UI đang hiển thị
+  let _gNodeOpen = false, _gOverShown = false, _gEndShown = false; // (guest) trạng thái UI đang hiển thị
 
   function update(rawDt) {
     time += rawDt;
@@ -221,6 +272,13 @@
 
     /* ── 🌐 MÁY GUEST: KHÔNG mô phỏng gì cả — chỉ gửi phím + áp "ảnh chụp" máy host ── */
     if (window.Net && Net.mode === 'guest') {
+      // ⚔️ ĐỐI ĐẦU: camera tự bám NGƯỜI MÌNH (không dùng camera co-op từ snapshot —
+      // mỗi máy nhìn từ phía đội mình). tickGuest gửi chuột theo toạ độ thế giới
+      // nên camera phải đúng TRƯỚC khi gửi input.
+      if (mode === 'dm' && Player.obj) {
+        Camera.follow(Player.obj, viewW, viewH, Level, dt);
+        Level.camX = Camera.x; Level.camY = Camera.y;
+      }
       Net.tickGuest(dt);       // gửi input ~30Hz + áp snapshot mới nhất
       Particles.update(dt);    // hạt hiệu ứng riêng của máy mình
       _guestUi();              // bấm lá/modifier/tiệm → GỬI YÊU CẦU sang host
@@ -228,6 +286,12 @@
       if (Wave.over && !_gOverShown) {
         _gOverShown = true;
         Menu.showGameOver(Wave.num, Wave.score, false, false);
+      }
+      // ⚔️ host báo trận đối đầu kết thúc (snapshot Match.state) → bảng kết quả
+      //   mình là ĐỘI B → thắng khi scoreB > scoreA
+      if (mode === 'dm' && Match.state === 'ended' && !_gEndShown) {
+        _gEndShown = true;
+        Menu.showMatchEnd(Match.scoreB > Match.scoreA, Match.scoreA, Match.scoreB);
       }
       if (toastTimer > 0) toastTimer -= rawDt;
       if (GameLoop.error && !errShown) {
@@ -251,13 +315,13 @@
     const p = Player.obj;
     const mw = { x: Input.mouse.x + Camera.x, y: Input.mouse.y + Camera.y };
 
-    /* 🤝 CO-OP LAN: host chạy mô phỏng CHO CẢ 2 người — mỗi người 1 bộ input riêng */
+    /* 🤝 CO-OP/⚔️ ĐỐI ĐẦU LAN: host chạy mô phỏng CHO CẢ 2 người — mỗi người 1 bộ input riêng */
     const coop = window.Net && Net.mode === 'host' && Net.peer && Player.list.length > 1;
     if (coop) {
       Player.update(p, Level, dt, mw); // người 1: chuột + phím của máy này
       const r = Net.remoteInp;         // người 2: input ẢNH gửi từ máy guest
-      Player.update(Player.list[1], Level, dt,
-        { x: r.mouse.x + Camera.x, y: r.mouse.y + Camera.y }, r);
+      // guest gửi chuột theo TOẠ ĐỘ THẾ GIỚI (tự cộng camera máy nó) → host dùng NGUYÊN
+      Player.update(Player.list[1], Level, dt, { x: r.mouse.x, y: r.mouse.y }, r);
     } else {
       Player.update(p, Level, dt, mw);
     }
@@ -286,12 +350,13 @@
       if (coop) Net.tickHost(dt);
     } else if (mode === 'dm') {
       Match.update(dt);
+      // 🌐 host tick: gửi snapshot ~20Hz cho máy guest (co-op lẫn đối đầu)
+      if (coop) Net.tickHost(dt);
     }
 
-    // phím G — lụm súng đang nằm gần người (CẢ wave lẫn DM) · co-op: mỗi người lụm riêng
-    for (const pl of (coop ? Player.list : [p])) {
-      if (Input.wasPressed('pickup') && pl.hp > 0 && !pl.deadTimer) Pickups.tryPickup(pl);
-    }
+    // phím G — lụm súng đang nằm gần người (CẢ wave lẫn DM) · 🌐 chỉ NGƯỜI MÌNH
+    // bấm mới lụm — bạn 2 bấm G ở máy nó → gửi tin nhắn 'pickup' riêng sang đây
+    if (Input.wasPressed('pickup') && p.hp > 0 && !p.deadTimer) Pickups.tryPickup(p);
 
     // Escape → pause
     if (Input.wasPressed('pause')) {
@@ -322,9 +387,10 @@
       }
     }
 
-    // camera bám: chơi đơn → người 1; co-op → ĐIỂM GIỮA 2 người (cả 2 đều trong khung hình)
+    // camera bám: co-op SINH TỐN → ĐIỂM GIỮA 2 người (cả 2 cùng 1 khung hình);
+    // ⚔️ ĐỐI ĐẦU → bám NGƯỜI MÌNH (2 máy 2 phía map, guest cũng tự bám người nó)
     let camTarget = p;
-    if (coop) {
+    if (coop && mode === 'wave') {
       const a = Player.list[0], b = Player.list[1];
       camTarget = {
         x: (a.x + a.w / 2 + b.x + b.w / 2) / 2,
@@ -616,15 +682,21 @@
 
       ctx.textAlign = 'left';
     } else if (mode === 'dm') {
-      // tỷ số 2 đội (giữa trên)
+      // tỷ số 2 đội (giữa trên) — 🌐 mạng: mỗi máy nhìn từ góc ĐỘI MÌNH
+      //   host (đội A): xanh lá trái · guest (đội B): đỏ trái
+      const guest = window.Net && Net.mode === 'guest';
+      const myScore = guest ? Match.scoreB : Match.scoreA;
+      const enScore = guest ? Match.scoreA : Match.scoreB;
+      const myCol = guest ? '#f43f5e' : '#4ade80';
+      const enCol = guest ? '#4ade80' : '#f43f5e';
       ctx.textAlign = 'center';
       ctx.font = '700 26px Consolas, monospace';
-      ctx.fillStyle = '#4ade80';
-      ctx.fillText(String(Match.scoreA), viewW / 2 - 60, 12);
+      ctx.fillStyle = myCol;
+      ctx.fillText(String(myScore), viewW / 2 - 60, 12);
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
       ctx.fillText('—', viewW / 2, 12);
-      ctx.fillStyle = '#f43f5e';
-      ctx.fillText(String(Match.scoreB), viewW / 2 + 60, 12);
+      ctx.fillStyle = enCol;
+      ctx.fillText(String(enScore), viewW / 2 + 60, 12);
       ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
       ctx.fillStyle = 'rgba(160,180,220,0.7)';
       ctx.fillText('ĐỘI BẠN (' + Config.DM.WIN_KILLS + ' kill thắng) — ĐỘI ĐỊCH', viewW / 2, 44);

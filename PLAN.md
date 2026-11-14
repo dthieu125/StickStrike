@@ -467,6 +467,30 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **100/100 test logic PASS ×3 lần chạy** (thêm 3 test: snapshot round-trip JSON,
       cứu đồng đội 3s/tụt/cả-2-gục-mới-thua, chia tiền riêng túi qua `lastHitBy`)
 
+### ✅ Giai đoạn 16 — ⚔️ ĐỐI ĐẦU 1v1 QUA MẠNG — MỖI ĐỘI CÓ BOT (HOÀN THÀNH)
+
+- [x] **Match tổng quát hoá**: `Match.start(mapDef, perTeam)` — chơi đơn để trống (đội A
+      N-1 bot, đội B đủ N); qua mạng truyền `TEAM_SIZE-1` (mỗi đội 1 slot là NGƯỜI THẬT);
+      guest dựng view truyền `0` (bot thật do host mô phỏng, snapshot dựng lại).
+      `Match.update` quét TẤT CẢ người: ai gục → ĐỘI ĐỊCH +1 điểm, hồi sinh ở spawn ĐỘI MÌNH
+- [x] **Snapshot mở rộng**: chụp thêm `bots` (id-mapped như quái — bỏ `target`, súng gửi id),
+      `health` (túi máu hồi rải ngẫu nhiên), `match` (scoreA/scoreB/state) — guest dựng lại
+      bot bằng `Bots.spawn(...)` + copy trường + giải súng từ id; bot mất khỏi snapshot bị gỡ
+- [x] **Chuột guest → TOẠ ĐỘ THẾ GIỚI** (`mouse + Camera` máy guest): co-op (camera giống host)
+      lẫn đối đầu (mỗi máy bám camera người mình) đều đúng — host dùng tọa độ NGUYÊN
+- [x] **Camera đối đầu**: host bám NGƯỜI MÌNH (không ghim giữa 2 người như co-op),
+      guest tự bám người mình sau khi áp snapshot; màu áo guest giữ màu ĐỘI B (đỏ)
+      + màu guest TỰ CHỌN được khôi phục sau mỗi snapshot (`Net._guestColor`)
+- [x] **Luồng trận**: `Game.startNetDM(mapId)` (host tạo 2 người đội A/B + gửi `start-dm`
+      kèm teamSize/winKills) · `_guestStartDM` (guest dựng view + Match.start(mapDef, 0))
+      · kết thúc qua snapshot `Match.state='ended'` → bảng kết quả (guest thắng khi scoreB>scoreA)
+      · host tick snapshot cả ở nhánh DM · fx 'poof' bot chết gửi sang guest
+- [x] **Menu + HUD**: nút ⚔️ ĐỐI ĐẦU 1v1 hiện cạnh SINH TỔN khi đủ 2 người (chỉ máy chủ);
+      tỷ số HUD mỗi máy nhìn từ góc ĐỘI MÌNH (điểm mình bên trái, màu đội mình);
+      nút ĐẤU LẠI ẩn trên máy guest (phải đợi host)
+- [x] **102/102 test logic PASS ×3 lần chạy** (thêm 2 test: snapshot DM round-trip
+      bot/súng/túi máu/điểm + gỡ bot mất, Match respawn đúng spawn đội + chia điểm 2 chiều)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
       còn lại: boss nhỏ theo phase
@@ -508,16 +532,17 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ## 8. Ràng buộc & lưu ý
 
-- ~~**Không làm multiplayer qua mạng** ở giai đoạn này~~ — **ĐÃ LÀM ở GĐ 15** (người chơi yêu cầu):
-  co-op LAN 2 máy, server relay thuần Node (`server.js`), host-authoritative. GĐ 16 sau này:
-  đối đầu 1v1 mỗi đội có bot (số bot chỉnh như DM).
+- ~~**Không làm multiplayer qua mạng** ở giai đoạn này~~ — **ĐÃ LÀM ở GĐ 15-16** (người chơi yêu cầu):
+  co-op LAN 2 máy + đối đầu 1v1 mỗi đội có bot, server relay thuần Node (`server.js`),
+  host-authoritative.
 - Luôn giữ game **chạy được ở cuối mỗi buổi làm** — không code khối lớn rồi mới thử.
 - Mọi số liệu (damage, tốc độ, trọng lực...) nằm trong `config.js` — chỉnh cảm giác game sau này không phải mò code.
 - Code vẽ người que dùng chung 1 hàm `drawStickman(color, hat, pose)` — thêm màu áo/mũ mới chỉ là thêm 1 dòng config.
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-15 (co-op LAN 2 người) — 100/100 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-16 (co-op LAN + đối đầu 1v1 LAN) — 102/102 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
-TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỔN.
+TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
+hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).
 Muốn chỉnh cảm giác game (máu, tốc độ, giá súng...): mở `js/config.js` + `js/weapons/weapons.js` — mọi số nằm ở đó.

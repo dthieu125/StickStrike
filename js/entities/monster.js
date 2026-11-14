@@ -29,6 +29,7 @@ window.Monsters = {
     kamikaze:{ w: 24, h: 28, hp: 20, speed: 250, dmg: 0, money: 15, score: 15, blood: '#ffd166' },
     sniper:  { w: 24, h: 44, hp: 40, speed: 90, dmg: 25, money: 20, score: 20, blood: '#f783ac' },
     boss:    { w: 56, h: 92, hp: 700, speed: 55, dmg: 30, money: 150, score: 200, blood: '#ff4d4d' },
+    elite_mini: { w: 40, h: 68, hp: 240, speed: 70, dmg: 24, money: 60, score: 60, blood: '#f0abfc' }, // 👹 BOSS NHỎ — máu ≤50% là CUỒNG NỘ
   },
 
   clear() { for (const m of this.list) Combatants.unregister(m); this.list.length = 0; },
@@ -58,6 +59,9 @@ window.Monsters = {
       stunT: 0,                    // choáng khi vừa ĐỔI PHASE (cơ hội dồn đạn)
       volleyCd: 1.5, summonCd: 2,  // đồng hồ ném loạt (P1) + gọi quân (P2)
       bossMinion: false,           // crawler do boss trồi lên (đếm để giới hạn)
+      /* ── 👹 riêng BOSS NHỎ (elite_mini) ── */
+      enraged: false,              // máu ≤ 50% → CUỒNG NỘ (nhanh + nhảy đè)
+      leapCd: 2.5,                 // đồng hồ cú nhảy đè (chỉ khi cuồng)
       hit(dmg, isHead, hx, hy, shooterTeam, owner) {
         if (this.dead) return 0;
         // 🤝 co-op: NHỚ AI BẮN (owner = entity người chơi) → chết thì tiền về túi NGƯỜI ĐÓ
@@ -114,6 +118,13 @@ window.Monsters = {
           AudioFX._tone(500, 120, 0.6, 'sawtooth', 0.16);
           window.showToast && showToast('👑 BOSS GỤC! Vàng lớn + 2/3 lựa chọn HIẾM đang chờ!');
         }
+        // 👹 BOSS NHỎ GỤC: loé sáng tím + toasts nhỏ (không có modifier hiếm)
+        if (m.type === 'elite_mini' && !m.boomed) {
+          m.boomed = true;
+          Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 16, '#f0abfc');
+          Particles.text(m.x + m.w / 2, m.y - 26, 'BOSS NHỎ GỤC!', '#f0abfc', 18);
+          AudioFX._tone(420, 100, 0.45, 'sawtooth', 0.14);
+        }
         m.deadT = (m.deadT || 0) + dt;
         if (m.deadT > 0.8) { Combatants.unregister(m); this.list.splice(i, 1); }
         continue;
@@ -128,7 +139,7 @@ window.Monsters = {
 
       m.flash = Math.max(0, m.flash - dt);
       m.spawnFade = Math.min(1, m.spawnFade + dt * 2);
-      m.biteCd -= dt; m.spitCd -= dt; m.jumpCd -= dt;
+      m.biteCd -= dt; m.spitCd -= dt; m.jumpCd -= dt; m.leapCd = (m.leapCd || 0) - dt;
 
       const dx = Level.wrapDx(p.x + p.w / 2 - (m.x + m.w / 2)); // map vòng tròn: đuổi theo qua mép map
       const dist = Math.abs(dx);
@@ -149,6 +160,20 @@ window.Monsters = {
           AudioFX._tone(180, 90, 0.4, 'sawtooth', 0.14);
           window.showToast && showToast(want === 2 ? '👑 BOSS GỌI QUÂN! Điểm yếu dời xuống NGỰC'
             : '👑 BOSS CUỒNG NỘ! Điểm yếu dời xuống CHÂN — chạy kẻo đè!');
+        }
+      }
+
+      /* ── 👹 BOSS NHỎ: máu ≤ 50% → CUỒNG NỘ (nhanh ×1.6 + nhảy đè) ── */
+      if (m.type === 'elite_mini' && !m.enraged) {
+        const E = Config.WAVE.ELITE_MINI;
+        if (m.hp / m.maxHp <= E.ENRAGE_AT) {
+          m.enraged = true;
+          m.leapCd = 1.2;                     // cuồng xong nhảy sớm — đừng đứng gần!
+          m.flash = 0.5;                      // nháy trắng báo chuyển trạng thái
+          Particles.text(m.x + m.w / 2, m.y - 26, '⚠️ CUỒNG NỘ!', '#ff2b5e', 17);
+          Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 14, '#ff2b5e');
+          AudioFX._tone(160, 100, 0.4, 'sawtooth', 0.14);
+          window.showToast && showToast('👹 BOSS NHỎ CUỒNG NỘ! Nhảy đè — né nhanh!');
         }
       }
 
@@ -214,6 +239,27 @@ window.Monsters = {
             m.biteCd = 1.0;
             Particles.sparks(p.x + p.w / 2, p.y + p.h / 2, 0, 10, '#ff5a5a');
           }
+        }
+      } else if (m.type === 'elite_mini') {
+        // 👹 BOSS NHỎ: thường = xông lên đập như brute; CUỒNG NỘ = nhanh ×1.6
+        // + NHẢY ĐÈ người chơi (leap) — xa quá và đủ hồi thì bồng lên đè
+        const E = Config.WAVE.ELITE_MINI;
+        const spd = m.enraged ? m.speed * E.ENRAGE_SPEED : m.speed;
+        const mv = this._wallMove(m, m.facing, m.enraged ? 900 : 500, dt);
+        if (mv === m.facing) m.vx = _approach(m.vx, m.facing * spd, (m.enraged ? 900 : 500) * dt);
+        if (m.enraged) {
+          // xa quá → NHẢY ĐÈ (telegraph: khựng 0.35s không cần — bay nhanh là đủ dễ né)
+          if (dist > E.LEAP_MIN && m.onGround && m.leapCd <= 0) {
+            m.vx = Math.sign(dx) * Math.min(420, Math.abs(dx) * 1.8);
+            m.vy = -700;
+            m.leapCd = E.LEAP_CD;
+            AudioFX._tone(190, 320, 0.18, 'square', 0.1);
+          }
+        }
+        if (m.biteCd <= 0 && _overlap(m, p)) {
+          p.takeDamage(m.dmg, m.x + m.w / 2);
+          m.biteCd = 1.0;
+          Particles.sparks(p.x + p.w / 2, p.y + p.h / 2, 0, 8, '#f0abfc');
         }
       } else if (m.type === 'crawler') {
         // lao thẳng; tường thấp thì NHẢY QUA, tường cao thì ĐI VÒNG tìm lối
@@ -396,6 +442,7 @@ window.Monsters = {
         : m.type === 'kamikaze' ? '#ffa94d'
         : m.type === 'sniper' ? '#f783ac'
         : m.type === 'boss' ? (m.phase === 2 ? '#ff8a3c' : m.phase === 3 ? '#ff2b5e' : '#b478ff')
+        : m.type === 'elite_mini' ? (m.enraged ? '#ff2b5e' : '#c084fc')
         : '#e2574c';
       // hào quang khi vừa trồi lên
       if (m.spawnFade < 1) {
@@ -495,6 +542,22 @@ window.Monsters = {
           ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
           ctx.fill();
         }
+        if (m.type === 'elite_mini') {
+          // 👹 BOSS NHỎ: vương miện nhọn trên đầu — cuồng thì đỏ rực chớp chớp
+          const cx = m.x + m.w / 2;
+          const a = m.enraged ? 0.5 + 0.4 * Math.sin(time * 14) : 0.75;
+          ctx.strokeStyle = m.enraged ? `rgba(255,60,90,${a.toFixed(2)})` : 'rgba(216,180,254,0.8)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx - 8, m.y - 2);
+          ctx.lineTo(cx - 8, m.y - 8);
+          ctx.lineTo(cx - 3, m.y - 3);
+          ctx.lineTo(cx, m.y - 10);
+          ctx.lineTo(cx + 3, m.y - 3);
+          ctx.lineTo(cx + 8, m.y - 8);
+          ctx.lineTo(cx + 8, m.y - 2);
+          ctx.stroke();
+        }
       }
       ctx.globalAlpha = 1;
 
@@ -517,6 +580,19 @@ window.Monsters = {
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffe066';
         ctx.fillText('👑 BOSS · PHASE ' + m.phase + '/3', m.x + m.w / 2, m.y - 26);
+        ctx.textAlign = 'left';
+      }
+      // 👹 thanh máu BOSS NHỎ: rộng hơn quái thường + nhãn CUỒNG NỘ khi máu ≤50%
+      if (!m.dead && m.type === 'elite_mini') {
+        const bw = m.w + 34, pct = Math.max(0, m.hp / m.maxHp);
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillRect(m.x + m.w / 2 - bw / 2, m.y - 18, bw, 8);
+        ctx.fillStyle = m.enraged ? '#ff2b5e' : '#c084fc';
+        ctx.fillRect(m.x + m.w / 2 - bw / 2 + 1, m.y - 17, (bw - 2) * pct, 6);
+        ctx.font = '700 10px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = m.enraged ? '#ff8fb0' : '#e9d5ff';
+        ctx.fillText(m.enraged ? '👹 BOSS NHỎ · CUỒNG NỘ!' : '👹 BOSS NHỎ', m.x + m.w / 2, m.y - 22);
         ctx.textAlign = 'left';
       }
     }

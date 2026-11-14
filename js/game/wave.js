@@ -312,6 +312,9 @@ window.Wave = {
     this.queue = q.map((type, i) => ({ type, delay: 0.4 + i * interval }));
     // 👑 BOSS trồi SAU CÙNG — dọn lính trước, nghỉ tay chút rồi boss ló mặt
     if (isBossWave) this.queue.push({ type: 'boss', delay: 0.4 + q.length * interval + 1.6 });
+    // 👹 BOSS NHỎ: wave thường đủ hạn (3, 6, 9... trừ wave boss lớn) → trồi CUỐI CÙNG
+    const isMiniWave = !isBossWave && this.num >= W.ELITE_MINI.FROM && this.num % W.ELITE_MINI.EVERY === 0;
+    if (isMiniWave) this.queue.push({ type: 'elite_mini', delay: 0.4 + q.length * interval + 1.2 });
     this.spawnT = 0;
   },
 
@@ -356,6 +359,10 @@ window.Wave = {
           if (item.type === 'boss') {
             window.showToast && showToast('👑 BOSS XUẤT HIỆN! Bắn vào chấm vàng = ×2 sát thương!');
             AudioFX._tone(90, 60, 0.8, 'sawtooth', 0.18);
+          }
+          if (item.type === 'elite_mini') {
+            window.showToast && showToast('👹 BOSS NHỎ xuất hiện! Máu cạn nửa là nó CUỒNG NỘ!');
+            AudioFX._tone(110, 70, 0.6, 'sawtooth', 0.16);
           }
           this.spawnT = 0.35;
         }

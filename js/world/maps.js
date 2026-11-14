@@ -57,6 +57,14 @@ window.Maps = {
       '##################...#######################################',
     ],
     playerSpawn: { x: 4 * 32, y: 20 * 32 - 52 },
+    /* ☠️ HAZARD — cột ô của ống ga/cột điện (cách xa điểm spawn P + lỗ hổng giữa map):
+     * ống ga cột 8 (trên dầm trái) · cột 47 (gần mép phải);
+     * cặp cột điện 25-29 phóng tia ngang trên dầm giữa */
+    hazards: [
+      { kind: 'gas', c: 8 },
+      { kind: 'gas', c: 47 },
+      { kind: 'zap', c: 25, c2: 29 },
+    ],
   },
 
   /* ── BUỒNG CHỨA HÀNG (deathmatch) ──
@@ -88,6 +96,12 @@ window.Maps = {
       A: [[96, 652], [200, 652], [128, 460], [352, 556], [320, 416]],
       B: [[1808, 652], [1704, 652], [1776, 460], [1536, 556], [1728, 416]],
     },
+    /* ☠️ HAZARD (chỉ deathmatch): ống ga giữa map + cặp cột điện giữa — canh phóng tia mà rời chỗ! */
+    hazards: [
+      { kind: 'gas', c: 15 },
+      { kind: 'gas', c: 44 },
+      { kind: 'zap', c: 26, c2: 33 },
+    ],
   },
 
   /* ── KHOANG PHẢN ỨNG (deathmatch) ──

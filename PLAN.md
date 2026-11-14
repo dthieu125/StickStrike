@@ -528,11 +528,40 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
       (SINH TỔN / DEATHMATCH / 2 NGƯỜI QUA MẠNG / MARKET / CÀI ĐẶT / MẸO CHƠI);
       màn PHÍM "Về menu" đổi thành "Về cài đặt" · dọn nút MARKET bị gắn onclick ×2
 
+### ✅ Giai đoạn 19 — 👹 BOSS NHỎ THEO PHASE (HOÀN THÀNH) — elite_mini cuồng nộ
+
+- [x] **Quái mới `elite_mini`** (config `WAVE.ELITE_MINI`): to 40×68, máu 240, tiền/điểm 60 —
+      trồi CUỐI CÙNG mỗi 3 wave từ wave 3 (3, 6, 9, 12... — wave BOSS lớn 5/10/15 nhường)
+      với toast '👹 BOSS NHỎ xuất hiện!' + tiếng gầm
+- [x] **Phase CUỒNG NỘ khi máu ≤ 50%**: nhanh ×1.6 + NHẢY ĐÈ người chơi (leap vy −700)
+      mỗi ~3.2s (mới cuồng nhảy sớm sau 1.2s) — báo trước bằng text '⚠️ CUỒNG NỘ!',
+      tia lửa đỏ, nháy trắng, toast; màu đổi TÍM → ĐỎ + vương miện chớp chớp
+- [x] **Thanh máu riêng kiểu boss** ('👹 BOSS NHỎ' → '👹 BOSS NHỎ · CUỒNG NỘ!') + xác chết
+      loé sáng 'BOSS NHỎ GỤC!' (không có modifier hiếm như boss lớn)
+
+### ✅ Giai đoạn 20 — ☠️ HAZARD + 🌌 PARALLAX (HOÀN THÀNH) — mây độc, tia điện, nền sâu
+
+- [x] **Module mới `js/world/hazards.js`** — hazard CỐ ĐỊNH đọc từ `mapDef.hazards`
+      (deterministic — 2 máy mạng tự dựng GIỐNG nhau, không cần đồng bộ):
+      • **gas**: ống ga phóng mây độc chu kỳ 6s (phóng 3.2s) bán kính 95 — đốt 7 máu/giây
+        theo TICK 0.5s (tránh knockback loạn), trúng CẢ người + quái + bot (quái chết vì gas
+        vẫn thưởng vàng người gần nhất); đứng trong mây → viền XANH LÁ phập phù
+      • **zap**: 2 cột điện phóng tia ngang — tích điện 1.1s (tia lửa + vòng chớp BÁO TRƯỚC)
+        rồi PHÓNG tia 0.55s dính đòn 18 NGAY (mỗi đợt trúng tối đa 1 lần); nhảy lên né được
+- [x] **🚨 Đèn báo động** từ wave 8 (`HAZARD.ALARM_AT`): viền ĐỎ nhấp nháy + còi bíp bíp
+      đều đặn — biết là map đang nguy hiểm; máy guest CHỈ VẼ hazard (host mô phỏng damage)
+- [x] **🌌 Parallax nền**: thêm 2 lớp sao XA (hệ số thị sai 0.45/0.7 — trôi chậm hơn lớp cũ
+      0.25) + 3 vệt TINH VÂN tím/teal/hồng trôi cực chậm — nền vũ trụ có chiều sâu
+- [x] **Map có hazard**: Boong tàu (wave: 2 ống ga + cặp cột điện trên dầm giữa) ·
+      Buồng chứa hàng (DM: 2 ống ga + cột điện giữa map) — đặt xa điểm spawn
+- [x] **107/107 test logic PASS ×3 lần chạy** (thêm 3 test: queue boss nhỏ · cuồng nộ/nhảy đè ·
+      hazard spawn/gas tick/zap qua biên CHARGE)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
-      còn lại: boss nhỏ theo phase
-2. **Map & Level**: thùng phá được + cover cho bot, map modular ghép phòng,
-   hazard (rò rỉ khí, tia điện, đèn báo động khi wave cao), parallax đẹp
+       ~~boss nhỏ theo phase~~ ✅ GĐ 19
+2. **Map & Level**: thùng phá được + cover cho bot ✅, map modular ghép phòng,
+       ~~hazard (rò rỉ khí, tia điện, đèn báo động khi wave cao), parallax đẹp~~ ✅ GĐ 20
 3. **Âm thanh**: SFX theo bề mặt trúng đạn (thép/kính/thịt) + layer vỏ đạn rơi
 4. **Chế độ khác**: Free-for-all / Gun Game, Team Deathmatch đang có sẵn
 5. **Meta**: settings menu (độ rung, particle density, volume riêng), achievement,
@@ -578,7 +607,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-18 (LAN co-op + đối đầu + đấu lại + CÀI ĐẶT) — 104/104 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 (LAN co-op + đối đầu + CÀI ĐẶT + boss nhỏ + hazard/parallax) — 107/107 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

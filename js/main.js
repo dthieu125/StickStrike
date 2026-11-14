@@ -13,6 +13,7 @@
   let mapDef = Maps.deck;
   let fps = 60;
   let toastTimer = 0, toastText = '', errShown = false;
+  let _alarmT = 0; // 🚨 đồng hồ CÒI BÁO ĐỘNG hazard (wave >= ALARM_AT)
   let time = 0;
 
   /* ============ API cho menu (DOM) gọi vào ============ */
@@ -36,6 +37,7 @@
       }
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
       Props.spawnForMap(mapDef); // 🛢️ vật thể phá được — chỉ chế độ Sinh tồn (vàng rơi chỉ nghiêng về wave)
+      if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện — đọc từ mapDef
       Wave.start();
       Menu.hideAll();
       AudioFX.startMusic();
@@ -53,6 +55,7 @@
       Player.create({ x: sp[0], y: sp[1] - 52 }, 'A', ['pistol']);
       Pickups.spawnForMap(mapDef);
       Trees.spawnForMap(mapDef); // map rừng → dựng cây phá được (map khác không có cây)
+      if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện — đọc từ mapDef
       Match.start(mapDef);
       Menu.hideAll();
       AudioFX.startMusic();
@@ -79,6 +82,7 @@
       Net._monMap = {}; Net._botMap = {}; // dựng lại bảng ghép quái + bot theo id
       Pickups.spawnForMap(mapDef);    // súng + túi máu rải cả map (guest nhận qua snapshot)
       Trees.spawnForMap(mapDef);      // cây dựng từ mapDef — 2 máy tự dựng GIỐNG nhau
+      if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ hazard — 2 máy tự dựng GIỐNG nhau (cùng mapDef)
       Match.start(mapDef, Config.DM.TEAM_SIZE - 1); // mỗi đội bớt 1 bot (slot đó là NGƯỜI THẬT)
       Net.send({ t: 'start-dm', mapId, teamSize: Config.DM.TEAM_SIZE, winKills: Config.DM.WIN_KILLS });
       Menu.hideAll();
@@ -111,6 +115,7 @@
     Pickups.clear();
     Trees.clear();
     if (window.Props) Props.clear();
+    if (window.Hazards) Hazards.clear();
     Combatants.reset();
     Time.reset();
   }
@@ -133,6 +138,7 @@
     Player.obj = Player.list[1]; // 🔧 máy guest = NGƯỜI 2 (chắc chắn đúng, không phụ thuộc create)
     Wave.start();            // trạng thái ban đầu (snapshot máy host sẽ đè lên ngay)
     Net._monMap = {};        // dựng lại bảng ghép quái
+    if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ hazard CHỈ ĐỂ VẼ (host mô phỏng damage — guest không tự trừ máu!)
     _gNodeOpen = false; _gOverShown = false;
     // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
     const g = (window.Gear && Gear.state) ? Gear.state : {};
@@ -157,6 +163,7 @@
     Player.obj = Player.list[1]; // 🔧 máy guest = ĐỘI B (người 2 — chỉ để vẽ + đọc snapshot)
     Net._guestColor = Player.obj.color; // giữ MÀU ÁO mình chọn (snapshot host sẽ đè, khôi phục sau)
     Trees.spawnForMap(mapDef);          // cây dựng từ mapDef — giống hệt máy host
+    if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ hazard CHỈ ĐỂ VẼ (host mô phỏng damage)
     // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
     const g = (window.Gear && Gear.state) ? Gear.state : {};
     Net.send({ t: 'gear', g: { helmet: !!g.helmet, armor: !!g.armor, shield: g.shield || 0 } });
@@ -353,6 +360,8 @@
     Pickups.update(dt); // súng rải trên map (cả wave lẫn DM) + túi máu (DM)
     Trees.update(dt);   // cây rung lắc (map rừng)
     if (window.Props) Props.update(dt); // 🛢️ vật thể rung + rò ga
+    // ☠️ hazard đốt máu (host + chơi đơn — guest chỉ vẽ, damage do host mô phỏng)
+    if (window.Hazards && !(window.Net && Net.mode === 'guest')) Hazards.update(dt);
 
     if (mode === 'wave') {
       Wave.update(dt);
@@ -363,6 +372,11 @@
       }
       Shop.setOpen(Shop.open && Wave.state === 'intermission');
       if (Wave.state === 'intermission' && Wave.timer <= 0) Shop.setOpen(false);
+      // 🚨 CÒI BÁO ĐỘNG hazard — wave đủ hạn: bíp bíp đều đặn + viền đỏ nhấp nháy (vẽ ở drawVignette)
+      if (Wave.state === 'active' && Wave.num >= Config.HAZARD.ALARM_AT) {
+        _alarmT -= dt;
+        if (_alarmT <= 0) { AudioFX._tone(760, 150, 0.1, 'square', 0.05); _alarmT = 2.6; }
+      }
       // 🛒 CLICK chuột vào món hàng / nút "RA ĐÁNH TIẾP" — cửa hàng vẽ bằng canvas
       // nên phải tự soi toạ độ click qua Shop.handleClick (nuốt luôn click để không bắn súng)
       if (Shop.open && Input.mouse.pressed) Shop.handleClick(Input.mouse.x, Input.mouse.y);
@@ -440,6 +454,7 @@
     Level.draw(ctx, Camera.x, Camera.y, viewW, viewH, time);
     Trees.draw(ctx); // cây map rừng — vẽ sau nền, trước người (đi trước cây là được)
     if (window.Props) Props.draw(ctx); // 🛢️ thùng nổ / thùng gỗ / ống ga
+    if (window.Hazards) Hazards.draw(ctx, time); // ☠️ ống ga mây độc + cột điện tia
 
     if (mode !== 'menu' && Player.obj) {
       Monsters.draw(ctx, time);
@@ -493,12 +508,25 @@
     if (!p) return;
     const hurt = Math.min(0.55, p.hurtFlash);
     const lowHp = p.hp > 0 && p.hp < 30 ? 0.22 + 0.1 * Math.sin(time * 6) : 0;
-    const a = Math.max(hurt, lowHp);
+    let a = Math.max(hurt, lowHp);
+    let color = 'rgba(255,0,30,';
+    // ☠️ đứng TRONG MÂY ĐỘC → viền xanh lá phập phù (đẩy mình ra ngoài đi!)
+    if (window.Hazards && p.hp > 0 && Hazards.gasAt(p.x + p.w / 2, p.y + p.h / 2)) {
+      const g = 0.28 + 0.1 * Math.sin(time * 7);
+      a = Math.max(a, g);
+      color = 'rgba(110,240,60,';
+    }
+    // 🚨 ĐÈN BÁO ĐỘNG đỏ nhấp nháy từ wave đủ hạn — biết là map đang đầy hazard
+    if (mode === 'wave' && Wave.state === 'active' && Wave.num >= Config.HAZARD.ALARM_AT) {
+      const r = 0.16 + 0.1 * Math.max(0, Math.sin(time * 4));
+      a = Math.max(a, r);
+      color = 'rgba(255,0,30,';
+    }
     if (a <= 0.01) return;
-    const g = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.35, viewW / 2, viewH / 2, viewH * 0.75);
-    g.addColorStop(0, 'rgba(255,0,0,0)');
-    g.addColorStop(1, `rgba(255,0,30,${a.toFixed(2)})`);
-    ctx.fillStyle = g;
+    const g2 = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.35, viewW / 2, viewH / 2, viewH * 0.75);
+    g2.addColorStop(0, color + '0)');
+    g2.addColorStop(1, color + a.toFixed(2) + ')');
+    ctx.fillStyle = g2;
     ctx.fillRect(0, 0, viewW, viewH);
   }
 

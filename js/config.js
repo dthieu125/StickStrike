@@ -189,8 +189,30 @@ window.Config = {
       PHASE2_AT: 2 / 3,         // máu ≤ 2/3 → phase 2
       PHASE3_AT: 1 / 3,         // máu ≤ 1/3 → phase 3
     },
+    /* ── 👹 BOSS NHỎ (elite_mini) — "mini boss theo phase" giữa wave thường ──
+     * Trồi CUỐI CÙNG của queue, mỗi 3 wave (từ wave 3) trừ wave BOSS.
+     * Phase 1: xông lên như brute. Máu ≤ 50% → CUỒNG NỘ: nhanh ×1.6 + NHẢY ĐÈ
+     * người chơi (leap) mỗi ~3.2s. Không có điểm yếu / không gọi quân — gọn nhẹ. */
+    ELITE_MINI: {
+      FROM: 3, EVERY: 3,        // wave 3, 6, 9, 12... (wave BOSS thì nhường boss lớn)
+      ENRAGE_AT: 0.5,           // máu ≤ 50% → cuồng nộ
+      ENRAGE_SPEED: 1.6,        // tốc độ khi cuồng ×1.6
+      LEAP_CD: 3.2,             // giây giữa 2 cú nhảy đè
+      LEAP_MIN: 130,            // xa hơn cỡ này mới nhảy (gần thì đập thường)
+    },
     // các điểm quái trồi lên trong map Boong tàu (px)
     SPAWNS: [[64, 652], [1856, 652], [1500, 236], [400, 236], [900, 236]],
+  },
+
+  /* ── ☠️ HAZARD — nguy hiểm CỐ ĐỊNH trên map (đọc từ mapDef.hazards) ──
+   * gas: ống ga rò rỉ → mây độc quanh ống, đốt máu DẦN theo tích luỹ 0.5s.
+   * zap: 2 cột điện → tích điện 1.1s (tia lửa báo trước) rồi PHÓNG tia 0.55s,
+   *      dính tia ăn đòn ngay lập tức (mỗi lần phóng trúng 1 lần).
+   * ALARM_AT: từ wave này đèn cảnh báo ĐỎ nhấp nháy + còi báo — biết là map đang nguy hiểm */
+  HAZARD: {
+    GAS: { RADIUS: 95, DMG: 7, TICK: 0.5, PERIOD: 6, EMIT: 3.2 }, // bán kính mây · dmg/giây · chu kỳ phóng · thời gian phóng
+    ZAP: { DMG: 18, PERIOD: 4.5, CHARGE: 1.1, ON: 0.55, BEAM_HALF: 16 }, // đòn tia · chu kỳ · tích điện · thời gian phóng · nửa bề dày tia (px)
+    ALARM_AT: 8,             // wave từ này có đèn ĐỎ cảnh báo hazard
   },
 
   /* ── Chế độ DEATHMATCH (đội) — chỉnh được ở menu chính ── */

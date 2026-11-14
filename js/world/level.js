@@ -139,6 +139,40 @@ window.Level = {
       ctx.fillRect(px, py, size, size);
     }
 
+    // 🌌 THỊ SAI SAU (parallax): 2 lớp sao XA trôi chậm hơn + tinh vân màu mờ
+    // — hệ số càng nhỏ = càng xa = trôi càng chậm, tạo chiều sâu không gian
+    const layers = [
+      { n: 90, fx: 0.45, fy: 0.25, col: '210, 200, 255' }, // sao xa tím nhạt
+      { n: 70, fx: 0.70, fy: 0.35, col: '255, 235, 210' }, // sao gần hơn ánh ấm
+    ];
+    for (const L of layers) {
+      const r2 = mulberry32(Math.round(L.fx * 1000));
+      for (let i = 0; i < L.n; i++) {
+        const sx = r2() * 2200, sy = r2() * 1300;
+        const size = r2() < 0.8 ? 1 : 1.6;
+        const tw = 0.25 + 0.55 * Math.abs(Math.sin(time * (0.3 + r2() * 0.4) + i * 1.7));
+        const px = ((sx - this.camX * L.fx) % (viewW + 40) + viewW + 40) % (viewW + 40) - 20;
+        const py = ((sy - this.camY * L.fy) % (viewH + 40) + viewH + 40) % (viewH + 40) - 20;
+        ctx.fillStyle = `rgba(${L.col}, ${tw.toFixed(2)})`;
+        ctx.fillRect(px, py, size, size);
+      }
+    }
+    // ☁️ TINH VÂN: vệt sáng màu lớn trôi CỰC chậm — nền vũ trụ không còn trống trải
+    const nebulae = [
+      { x: 420, y: 220, r: 230, col: '90, 60, 160', fx: 0.3 },   // tím
+      { x: 1500, y: 420, r: 190, col: '30, 110, 130', fx: 0.4 }, // teal
+      { x: 2100, y: 160, r: 170, col: '150, 60, 90', fx: 0.35 }, // hồng sẫm
+    ];
+    for (const n of nebulae) {
+      const px = ((n.x - this.camX * n.fx) % (viewW + 600) + viewW + 600) % (viewW + 600) - 300;
+      const py = n.y - this.camY * 0.12;
+      const g2 = ctx.createRadialGradient(px, py, 0, px, py, n.r);
+      g2.addColorStop(0, `rgba(${n.col}, 0.10)`);
+      g2.addColorStop(1, `rgba(${n.col}, 0)`);
+      ctx.fillStyle = g2;
+      ctx.fillRect(px - n.r, py - n.r, n.r * 2, n.r * 2);
+    }
+
     const planetX = 1150 - this.camX * 0.1;
     const planetY = 140 - this.camY * 0.06;
     const grad = ctx.createRadialGradient(planetX - 40, planetY - 40, 10, planetX, planetY, 150);

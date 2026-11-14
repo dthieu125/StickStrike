@@ -16,6 +16,9 @@ window.Config = {
 
   // Đường ngắm mờ giúp canh đạn (bật/tắt trong game bằng phím T)
   AIM_GUIDE: true,
+  // 🎯 ĐƯỜNG NGẮM — user chỉnh ở ⚙️ CÀI ĐẶT (menu.js lưu localStorage 'ss_aim')
+  // WIDTH: độ dày nét · ALPHA: độ đậm 0-1 · COLOR: màu hex · DASH: 'a,b' nét đứt, '0' = liền
+  AIM: { WIDTH: 2, ALPHA: 0.35, COLOR: '#a0f0ff', DASH: '4,7' },
 
   // Vụ NỔ xuyên chướng ngại: nổ BÊN KIA tường (không nhìn thẳng) vẫn làm mất
   // một PHẦN TRĂM MÁU; nổ ngay DƯỚI sàn mỏng (1 ô) dưới chân địch thì nặng hơn

@@ -13,7 +13,7 @@ window.Menu = {
     this.game = game;
     const $ = (id) => document.getElementById(id);
     this.el = {
-      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'),
+      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'), settings: $('settings'),
       mapName: $('mapName'), records: $('records'), hatBtn: $('hatBtn'),
       goTitle: $('goTitle'), goStats: $('goStats'),
       meTitle: $('meTitle'), meStats: $('meStats'),
@@ -54,10 +54,12 @@ window.Menu = {
     };
     $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
-    $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnTips').onclick = () => { AudioFX.click(); this.show('tips'); };
     $('btnTipsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
-    $('btnKeys').onclick = () => { AudioFX.click(); this.show('keys'); };
+    // ⚙️ CÀI ĐẶT — đường ngắm · trang phục · phím (màn PHÍM giờ nằm trong Cài Đặt)
+    $('btnSettings').onclick = () => { AudioFX.click(); this.show('settings'); this._drawAimPreview(); this._lookPreview(); };
+    $('btnSettingsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
+    $('btnKeysOpen').onclick = () => { AudioFX.click(); this.show('keys'); };
     $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.dmMaps.length - 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
     $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
 
@@ -78,6 +80,7 @@ window.Menu = {
       localStorage.setItem('ss_hat', next);
       this.el.hatBtn.textContent = '🎩 Mũ: ' + next;
       AudioFX.click();
+      this._lookPreview();
     };
 
     // pause
@@ -113,6 +116,7 @@ window.Menu = {
         dots.querySelectorAll('.dot').forEach((x) => x.classList.remove('active'));
         d.classList.add('active');
         AudioFX.click();
+        this._lookPreview();
       };
       dots.appendChild(d);
     });
@@ -124,8 +128,73 @@ window.Menu = {
     if (savedHat && Config.HATS.includes(savedHat)) Config.PLAYER.HAT = savedHat;
     this.el.hatBtn.textContent = '🎩 Mũ: ' + Config.PLAYER.HAT;
 
+    // ── 🎯 ĐƯỜNG NGẮM (⚙️ Cài Đặt) — khôi phục + wire + lưu 'ss_aim' ──
+    try {
+      const saved = JSON.parse(localStorage.getItem('ss_aim') || 'null');
+      if (saved) Object.assign(Config.AIM, saved);
+    } catch (e) { /* hỏng file lưu thì dùng mặc định */ }
+    const aim = Config.AIM;
+    const aimW = $('aimWidth'), aimA = $('aimAlpha'), aimC = $('aimColor'), aimD = $('aimDash');
+    const aimWl = $('aimWidthLabel'), aimAl = $('aimAlphaLabel');
+    aimW.value = aim.WIDTH;
+    aimA.value = Math.round(aim.ALPHA * 100);
+    aimC.value = aim.COLOR;
+    aimD.value = String(aim.DASH);
+    aimWl.textContent = aim.WIDTH + 'px';
+    aimAl.textContent = Math.round(aim.ALPHA * 100) + '%';
+    const aimSave = () => {
+      try { localStorage.setItem('ss_aim', JSON.stringify({
+        WIDTH: aim.WIDTH, ALPHA: aim.ALPHA, COLOR: aim.COLOR, DASH: aim.DASH,
+      })); } catch (e) { /* bỏ qua */ }
+      this._drawAimPreview();
+    };
+    aimW.oninput = () => { aim.WIDTH = +aimW.value; aimWl.textContent = aim.WIDTH + 'px'; aimSave(); };
+    aimA.oninput = () => { aim.ALPHA = +aimA.value / 100; aimAl.textContent = aimA.value + '%'; aimSave(); };
+    aimC.oninput = () => { aim.COLOR = aimC.value; aimSave(); };
+    aimD.onchange = () => { aim.DASH = aimD.value; AudioFX.click(); aimSave(); };
+
     this.refreshScores();
     this._previewLoop();
+  },
+
+  /* 🎯 vẽ xem trước ĐƯỜNG NGẮM đúng cài đặt hiện tại (canvas #aimPrev) */
+  _drawAimPreview() {
+    const cv = document.getElementById('aimPrev');
+    if (!cv) return;
+    const c2 = cv.getContext('2d');
+    const A = Config.AIM;
+    c2.clearRect(0, 0, cv.width, cv.height);
+    c2.save();
+    c2.globalAlpha = A.ALPHA;
+    c2.strokeStyle = A.COLOR;
+    c2.lineWidth = A.WIDTH;
+    if (A.DASH && A.DASH !== '0') c2.setLineDash(String(A.DASH).split(',').map(Number));
+    c2.beginPath();
+    c2.moveTo(18, cv.height / 2);
+    c2.lineTo(cv.width - 26, cv.height / 2);
+    c2.stroke();
+    c2.setLineDash([]);
+    c2.fillStyle = A.COLOR;
+    c2.beginPath();
+    c2.arc(cv.width - 26, cv.height / 2, Math.max(2.5, A.WIDTH + 1), 0, Math.PI * 2);
+    c2.fill();
+    c2.restore();
+  },
+
+  /* 👕 vẽ xem trước ÁO + MŨ hiện tại (canvas #lookPrev) */
+  _lookPreview() {
+    const cv = document.getElementById('lookPrev');
+    if (!cv) return;
+    const c2 = cv.getContext('2d');
+    c2.clearRect(0, 0, cv.width, cv.height);
+    c2.strokeStyle = 'rgba(120,140,170,0.5)';
+    c2.lineWidth = 2;
+    c2.beginPath(); c2.moveTo(30, 122); c2.lineTo(170, 122); c2.stroke();
+    drawStickman(c2, {
+      cx: 100, feetY: 120, h: 62,
+      facing: 1, runPhase: 2, moving: false, onGround: true, crouch: false, prone: false,
+      color: Config.PLAYER.COLOR, hat: Config.PLAYER.HAT, aimAngle: null, visor: true, glow: false,
+    });
   },
 
   _updateMapName() {
@@ -168,12 +237,12 @@ window.Menu = {
 
   show(panel) {
     Market.hide(); KeySettings.hide(); // rời chợ / bảng phím nếu đang mở
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net'].forEach((id) => {
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings'].forEach((id) => {
       this.el[id].classList.toggle('hidden', id !== panel);
     });
   },
   hideAll() {
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net'].forEach((id) => this.el[id].classList.add('hidden'));
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings'].forEach((id) => this.el[id].classList.add('hidden'));
   },
 
   /* 🌐 màn hình LAN: cập nhật dòng trạng thái + hiện nút BẮT ĐẦU khi đủ 2 người */

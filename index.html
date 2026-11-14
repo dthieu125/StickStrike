@@ -23,8 +23,8 @@
             <button id="btnDM" class="btn big">🤖 DEATHMATCH<small>đội nhóm cùng bot · tuỳ chọn số người &amp; điểm thắng</small></button>
             <button id="btnNet" class="btn big">🌐 2 NGƯỜI QUA MẠNG<small>co-op LAN cùng máy khác · chạy node server.js trước</small></button>
             <button id="btnMarket" class="btn big">🏪 MARKET<small>mua trang bị bằng vàng tích luỹ · giáp · nón · khiên</small></button>
+            <button id="btnSettings" class="btn big">⚙️ CÀI ĐẶT<small>đường ngắm · màu áo · mũ · phím chức năng</small></button>
             <button id="btnTips" class="btn big">💡 MẸO CHƠI<small>điều khiển · đạn giới hạn · mẹo bazoka</small></button>
-            <button id="btnKeys" class="btn big">⌨️ PHÍM CHỨC NĂNG<small>tự đổi phím theo ý bạn</small></button>
             <div class="map-pick">
               <button id="mapPrev" class="btn small">‹</button>
               <span id="mapName">📦 Buồng chứa hàng</span>
@@ -39,11 +39,6 @@
               <button id="dmKillsMinus" class="btn small">−</button>
               <span id="dmKillsLabel">🏁 30 kill thắng</span>
               <button id="dmKillsPlus" class="btn small">+</button>
-            </div>
-            <div class="customize">
-              <span>Áo của bạn:</span>
-              <div id="colorDots"></div>
-              <button id="hatBtn" class="btn small">🎩 Mũ: cap</button>
             </div>
             <div id="records" class="records">🏆 Kỷ lục: Wave 0 · 0 điểm</div>
           </div>
@@ -117,7 +112,55 @@
         <div id="keysList" class="keys-list"></div>
         <div class="btn-row">
           <button id="btnKeysReset" class="btn">🔄 Mặc định</button>
-          <button id="btnKeysBack" class="btn">‹ Về menu</button>
+          <button id="btnKeysBack" class="btn">‹ Về cài đặt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ⚙️ CÀI ĐẶT — đường ngắm · trang phục · phím ═══ -->
+    <div id="settings" class="screen hidden">
+      <div class="panel market-panel">
+        <h2>⚙️ CÀI ĐẶT</h2>
+        <div class="set-group">
+          <h3>🎯 ĐƯỜNG NGẮM <small>(bật/tắt trong trận bằng phím T)</small></h3>
+          <div class="set-row">
+            <label>Độ dày</label>
+            <input id="aimWidth" type="range" min="1" max="6" step="0.5" />
+            <span id="aimWidthLabel">2px</span>
+          </div>
+          <div class="set-row">
+            <label>Độ đậm</label>
+            <input id="aimAlpha" type="range" min="10" max="100" step="5" />
+            <span id="aimAlphaLabel">35%</span>
+          </div>
+          <div class="set-row">
+            <label>Màu</label>
+            <input id="aimColor" type="color" value="#a0f0ff" />
+            <label>Kiểu nét</label>
+            <select id="aimDash">
+              <option value="4,7">Nét đứt ngắn</option>
+              <option value="10,8">Nét đứt dài</option>
+              <option value="1,6">Chấm</option>
+              <option value="6,3,1,3">Chấm gạch</option>
+              <option value="0">Liền mạch</option>
+            </select>
+          </div>
+          <canvas id="aimPrev" width="280" height="56"></canvas>
+        </div>
+        <div class="set-group">
+          <h3>👕 TRANG PHỤC</h3>
+          <div class="customize">
+            <span>Áo của bạn:</span>
+            <div id="colorDots"></div>
+            <button id="hatBtn" class="btn small">🎩 Mũ: cap</button>
+          </div>
+          <canvas id="lookPrev" width="200" height="140"></canvas>
+        </div>
+        <div class="btn-row">
+          <button id="btnKeysOpen" class="btn">⌨️ PHÍM CHỨC NĂNG<small>tự đổi phím theo ý bạn</small></button>
+        </div>
+        <div class="btn-row">
+          <button id="btnSettingsBack" class="btn">‹ Về menu</button>
         </div>
       </div>
     </div>

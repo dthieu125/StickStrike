@@ -517,22 +517,24 @@
 
   function drawAimGuide(p) {
     if (!Config.AIM_GUIDE) return;
+    const A = Config.AIM;
     const w = Weapons.list[p.wi];
     const m = Player.muzzlePos(p, w);
     const end = Bullets.previewEnd(m.x, m.y, p.aimAngle, w, p.team);
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(160,240,255,0.25)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 7]);
+    ctx.globalAlpha = A.ALPHA;
+    ctx.strokeStyle = A.COLOR;
+    ctx.lineWidth = A.WIDTH;
+    if (A.DASH && A.DASH !== '0') ctx.setLineDash(String(A.DASH).split(',').map(Number));
     ctx.beginPath();
     ctx.moveTo(m.x, m.y);
     ctx.lineTo(end.x, end.y);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(160,240,255,0.4)';
+    ctx.fillStyle = A.COLOR;
     ctx.beginPath();
-    ctx.arc(end.x, end.y, 2.5, 0, Math.PI * 2);
+    ctx.arc(end.x, end.y, Math.max(2.5, A.WIDTH + 1), 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }

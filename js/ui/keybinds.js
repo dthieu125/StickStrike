@@ -36,7 +36,7 @@ window.KeySettings = {
       window.showToast && showToast('⌨️ Đã trả TẤT CẢ phím về mặc định');
       this.refresh();
     };
-    $('btnKeysBack').onclick = () => { AudioFX.click(); this.hide(); Menu.show('menu'); };
+    $('btnKeysBack').onclick = () => { AudioFX.click(); this.hide(); Menu.show('settings'); };
 
     // bắt phím khi đang "học" — capture để chặn trước bộ nghe của Input
     window.addEventListener('keydown', (e) => this._onKey(e), true);

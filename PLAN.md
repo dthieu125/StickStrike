@@ -517,6 +517,17 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
       host `selectWeapon` hộ; đang chọn lá/modifier thì phím 1-3 dành cho chọn)
 - [x] **104/104 test logic PASS ×3 lần chạy** (thêm test điều khiển độc lập 2 người)
 
+### ✅ Giai đoạn 18 — ⚙️ MÀN CÀI ĐẶT RIÊNG (HOÀN THÀNH) — đường ngắm · trang phục · phím
+
+- [x] **🎯 ĐƯỜNG NGẮM chỉnh được** (`Config.AIM`): ĐỘ DÀY (1-6px) · ĐỘ ĐẬM (10-100%) ·
+      MÀU (bảng chọn màu) · KIỂU NÉT (nét đứt ngắn/dài · chấm · chấm gạch · liền mạch) —
+      có canvas XEM TRƯỚC trực tiếp khi kéo; lưu `ss_aim` vào localStorage;
+      `drawAimGuide` đọc Config.AIM (mặc định dày 2px, đậm 35% — đậm hơn cũ vì bạn thân kêu mờ)
+- [x] **Màn ⚙️ CÀI ĐẶT gom 3 thứ**: đường ngắm + TRANG PHỤC (chấm màu áo + chọn mũ,
+      có canvas xem trước người que) + nút vào ⌨️ PHÍM CHỨC NĂNG — menu chính gọn lại
+      (SINH TỔN / DEATHMATCH / 2 NGƯỜI QUA MẠNG / MARKET / CÀI ĐẶT / MẸO CHƠI);
+      màn PHÍM "Về menu" đổi thành "Về cài đặt" · dọn nút MARKET bị gắn onclick ×2
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
       còn lại: boss nhỏ theo phase
@@ -567,7 +578,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-17 + sửa lỗi playtest mạng — 104/104 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-18 (LAN co-op + đối đầu + đấu lại + CÀI ĐẶT) — 104/104 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

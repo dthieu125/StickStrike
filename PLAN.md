@@ -581,8 +581,26 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
       mode nào cũng xài; map DM giờ là map Sinh Tồn hợp lệ: người chơi spawn tại điểm
       đội A (chân chạm sàn), quái trồi tại các điểm spawn của map (Boong tàu được thêm
       spawns 2 đội); "ĐÁNH LẠI" giữ đúng map; co-op LAN gửi đúng mapId sang máy guest
-- [x] **109/109 test logic PASS ×3 lần chạy** (thêm test: spawn Sinh Tồn trên map DM +
-      deck ưu tiên playerSpawn + điểm trồi quái trong biên map)
+- [x] **112/112 test logic PASS ×3 lần chạy** (thêm: spawn Sinh Tồn trên map DM +
+      **3 test mobile**: input ảo OR Input thật · máy trạng thái ngồi/nằm · joystick ngắm)
+
+### 📱 GĐ 21 — ĐIỀU KHIỂN MOBILE (nút cảm ứng cho điện thoại)
+
+- [x] **⚙️ CÀI ĐẶT → 📱 THIẾT BỊ**: 2 nút 🖥️ MÁY TÍNH / 📱 MOBILE — lưu `ss_device`;
+      máy cảm ứng chưa từng chọn → TỰ bật mobile; bàn phím vẫn xài song song (OR input)
+- [x] **Cụm TRÁI-DƯỚI**: ◀ đi trái · ▶ đi phải · 🔫 bắn (to, nửa trong suốt)
+- [x] **Cụm PHẢI-DƯỚI**: joystick NGẮM kéo MỌI GÓC (độ dài kéo = tầm ngắm 120–300px
+      quanh người chơi, núm xoay theo ngón) + vòng ngoài: 🔄 đổi súng (sang khẩu kế) ·
+      ⏫ nhảy · ⏬ xuống · 🔫 bắn
+- [x] **⏬ máy trạng thái ngồi/nằm**: tap 1 = NGỒI (giữ) · GIỮ ≥0.35s = NẰM (thả = đứng) ·
+      NHẤN ĐÔI <0.3s = NẰM KÉO DÀI (tap lần nữa → ngồi)
+- [x] **Nút mini TRÊN-PHẢI**: ⏸ dừng · 🛒 cửa hàng · ✋ lụm súng · ⟳ nạp · 💣 lựu đạn · 🏃 dash
+- [x] **Kỹ thuật**: module mới `js/ui/mobile.js` — giả lập ĐỦ interface `Input`
+      (isDown/wasPressed/mouse/endFrame) → main.js/net.js/wave.js tự dùng input ĐANG
+      HOẠT ĐỘNG; gameLoop gọi `Mobile.endFrame()` TRƯỚC `Input.endFrame()` (cạnh thật
+      còn nguyên); chạm canvas = tap chuột (bắn + bấm cửa hàng); nút ẩn khi menu/pause;
+      nút 🛒 = "bấm phím B ẢO" nên cửa hàng nhận đúng; guest mạng gửi input từ nút ảo
+- [x] **112/112 test logic PASS ×3 lần chạy**
 
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
@@ -634,7 +652,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 + sửa lỗi playtest (item chìm · menu nhóm · Sinh Tồn chọn map) — 109/109 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-21 (đã có ĐIỀU KHIỂN MOBILE) + sửa lỗi playtest — 112/112 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

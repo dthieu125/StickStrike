@@ -26,6 +26,8 @@ window.GameLoop = {
       try {
         update(dt);
         render();
+        // 📱 mobile: dồn input ẢO (cạnh của Input thật còn nguyên) — phải TRƯỚC Input.endFrame
+        if (window.Mobile) Mobile.endFrame();
         window.Input.endFrame();
       } catch (err) {
         // chỉ "đập" lỗi 1 lần/giây thay vì 60 lần/giây cho đỡspam console

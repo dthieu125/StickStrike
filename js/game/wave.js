@@ -327,7 +327,8 @@ window.Wave = {
         this.timer -= dt;
         // modifier 1/2/3 cho trận này (đã chọn lá xong) — tự chọn random nếu lơ là
         if (this.offers) {
-          const inp = window.Input;
+          // 📱 mobile: nút ⟳/số cũng chọn modifier được — đọc input ĐANG HOẠT ĐỘNG
+          const inp = (window.Mobile && Mobile.active()) ? Mobile.input : window.Input;
           if (inp) {
             if (inp.wasPressed('slot0')) this.chooseOffer(0);
             else if (inp.wasPressed('slot1')) this.chooseOffer(1);

@@ -213,7 +213,8 @@ window.Net = {
     this._inT -= dt;
     if (this._inT <= 0 && window.Input) {
       this._inT = 1 / 30;
-      const inp = Input;
+      // 📱 guest mobile: gửi input từ nút cảm ứng; PC: từ chuột+phím
+      const inp = (window.Mobile && Mobile.active()) ? Mobile.input : Input;
       // 🔫 đổi súng: số 1-0 / lăn chuột → GỬI YÊU CẦU (host đổi hộ, view theo snapshot)
       //   đang chọn lá 🗺️ / modifier ⚡ (phím 1/2/3 cho việc khác) thì KHÔNG đổi súng
       const slotBusy = window.Wave && Wave.state === 'intermission' && (Wave.offers || Wave.nodeOpen);

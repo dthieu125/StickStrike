@@ -100,6 +100,7 @@
     },
     toMenu() {
       mode = 'menu'; paused = false;
+      if (window.Mobile) { Mobile._resetTouch(); Mobile.setVisible(false); } // 📱 tắt nút cảm ứng + xoá phím ma
       Wave.reset(); Match.reset();
       Monsters.clear(); Bots.clear(); Bullets.clear();
       Combatants.reset();
@@ -343,19 +344,21 @@
     }
 
     const p = Player.obj;
-    const mw = { x: Input.mouse.x + Camera.x, y: Input.mouse.y + Camera.y };
+    // 📱 chế độ mobile → dùng input ẢO (nút cảm ứng OR bàn phím); PC → Input thường
+    const inp = (window.Mobile && Mobile.active()) ? Mobile.input : Input;
+    const mw = { x: inp.mouse.x + Camera.x, y: inp.mouse.y + Camera.y };
 
     /* 🤝 CO-OP/⚔️ ĐỐI ĐẦU LAN: host chạy mô phỏng CHO CẢ 2 người — mỗi người 1 bộ input riêng */
     const coop = window.Net && Net.mode === 'host' && Net.peer && Player.list.length > 1;
     if (coop) {
-      Player.update(p, Level, dt, mw); // người 1: chuột + phím của máy này
+      Player.update(p, Level, dt, mw, inp); // người 1: chuột + phím của máy này
       const r = Net.remoteInp;         // người 2: input ẢNH gửi từ máy guest
       // guest gửi chuột theo TOẠ ĐỘ THẾ GIỚI (tự cộng camera máy nó) → host dùng NGUYÊN
       Player.update(Player.list[1], Level, dt, { x: r.mouse.x, y: r.mouse.y }, r);
       // 🔧 "ăn" xong cạnh phím ẢNH phải XOÁ NGAY trong frame (input guest ~30Hz sẽ đặt lại)
       r.endFrame();
     } else {
-      Player.update(p, Level, dt, mw);
+      Player.update(p, Level, dt, mw, inp);
     }
     Monsters.update(dt);
     Bots.update(dt);
@@ -371,7 +374,7 @@
     if (mode === 'wave') {
       Wave.update(dt);
       // bấm B mở cửa hàng khi đang nghỉ giữa các đợt (đang chọn lá 🗺️ thì KHÔNG)
-      if (Input.wasPressed('buy') && Wave.state === 'intermission') {
+      if (inp.wasPressed('buy') && Wave.state === 'intermission') {
         if (Wave.resting) Shop.setOpen(false); // 🏪 đang NGHỈ tiệm: B = đóng tiệm → chọn lại đường
         else if (!Wave.nodeOpen) Shop.toggle();
       }
@@ -395,21 +398,21 @@
 
     // phím G — lụm súng đang nằm gần người (CẢ wave lẫn DM) · 🌐 chỉ NGƯỜI MÌNH
     // bấm mới lụm — bạn 2 bấm G ở máy nó → gửi tin nhắn 'pickup' riêng sang đây
-    if (Input.wasPressed('pickup') && p.hp > 0 && !p.deadTimer) Pickups.tryPickup(p);
+    if (inp.wasPressed('pickup') && p.hp > 0 && !p.deadTimer) Pickups.tryPickup(p);
 
-    // Escape → pause
-    if (Input.wasPressed('pause')) {
+    // Escape / nút ⏸ → pause
+    if (inp.wasPressed('pause')) {
       paused = true;
       Menu.show('pause');
     }
 
-    // phím T — đường ngắm
-    if (Input.wasPressed('guide')) {
+    // phím T / nút 🎯 — đường ngắm
+    if (inp.wasPressed('guide')) {
       Config.AIM_GUIDE = !Config.AIM_GUIDE;
       showToast(Config.AIM_GUIDE ? '📍 BẬT đường ngắm' : 'Đã ẩn đường ngắm');
     }
     // phím M — tiếng
-    if (Input.wasPressed('mute')) {
+    if (inp.wasPressed('mute')) {
       AudioFX.toggleMute();
       showToast(AudioFX.muted ? '🔇 Đã tắt tiếng' : '🔊 Đã bật tiếng');
     }
@@ -499,6 +502,8 @@
       // thanh hàng súng DOM — ẩn khi ở menu, hiện khi vào game
       const bar = document.getElementById('wbar');
       bar.style.display = mode !== 'menu' ? 'flex' : 'none';
+      // 📱 nút điều khiển mobile — ẩn khi menu/pause (màn DOM đè canvas)
+      if (window.Mobile) Mobile.setVisible(mode !== 'menu' && !paused);
       if (Shop.open) Shop.updateAndDraw(ctx, Input.mouse);
       if (Player.obj && Player.obj.hp > 0) drawCrosshair();
       drawVignette();
@@ -598,7 +603,8 @@
   }
 
   function drawCrosshair() {
-    const m = Input.mouse;
+    // 📱 mobile: tâm ngắm theo "chuột ảo" từ joystick ngắm
+    const m = (window.Mobile && Mobile.active()) ? Mobile.mouse : Input.mouse;
     const w = Weapons.list[Player.obj.wi];
     const gap = 7 + w.spread * 260 + Player.obj.gunKick * 14;
     const len = 7;
@@ -886,6 +892,7 @@
   Market.init();              // nạp ví vàng + trang bị đã lưu (🏪 Market)
   KeySettings.init();         // nạp phím đã đổi (⌨️ PHÍM CHỨC NĂNG)
   Nodes.init();               // 🗺️ bảng chọn đường roguelite (ẩn mặc định)
+  if (window.Mobile) Mobile.init(); // 📱 chọn thiết bị (máy cảm ứng → tự bật mobile)
   if (window.Net) Net.onMsg = _netMsg; // 🌐 mạng LAN: bộ phân tin nhắn 2 máy
   Level.load(Maps.deck);      // map nền cho menu
   Menu.init(window.Game);

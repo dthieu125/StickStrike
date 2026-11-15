@@ -121,6 +121,15 @@ window.Config = {
     LOOT: { crate: [20, 35] }, // thùng gỗ vỡ rơi vàng random
   },
 
+  /* ── 📱 ĐIỀU KHIỂN MOBILE — nút cảm ứng (bật ở ⚙️ Cài Đặt → 📱 Thiết bị) ── */
+  MOBILE: {
+    AIM_MIN: 120,   // kéo joystick ngắn nhất → ngắm cách người 120px
+    AIM_MAX: 300,   // kéo hết cỡ → ngắm cách người 300px
+    JOY_R: 52,      // bán kính núm joystick tối đa (px màn hình)
+    PRONE_HOLD: 0.35, // giữ nút ⏬ bao lâu thì NẰM (giây)
+    DOUBLE_TAP: 0.3,  // 2 lần nhấn cách nhau < 0.3s = NẰM KÉO DÀI
+  },
+
   /* ── 🎲 EVENT NGẪU NHIÊN GIỮA WAVE — 30% cơ hội sau khi dọn 1 wave ── */
   EVENT: {
     CHANCE: 0.3,     // 30% wave kế có event bất ngờ

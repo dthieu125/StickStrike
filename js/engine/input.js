@@ -106,6 +106,26 @@
     mouse.wheel = e.deltaY > 0 ? 1 : -1;
   }, { passive: false });
 
+  /* ── 📱 CHẠM canvas (thiết bị cảm ứng) — tap = bắn 1 phát + bấm nút cửa hàng.
+   *      Nút điều khiển mobile là DOM riêng, không đụng tới canvas này. ── */
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return; // chuột đã có mousedown riêng
+    toCanvas(e);
+    mouse.down = true;
+    mouse.pressed = true;
+    if (window.AudioFX) AudioFX.ensure();
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'touch') return;
+    toCanvas(e); // rê ngón trên canvas = rê "chuột" (hover cửa hàng...)
+  });
+  window.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') mouse.down = false;
+  });
+  window.addEventListener('pointercancel', (e) => {
+    if (e.pointerType === 'touch') mouse.down = false;
+  });
+
   window.Input = {
     isDown: (action) => !!down[action],
     wasPressed: (action) => !!pressed[action],

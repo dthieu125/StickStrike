@@ -162,6 +162,24 @@ window.Menu = {
     aimC.oninput = () => { aim.COLOR = aimC.value; aimSave(); };
     aimD.onchange = () => { aim.DASH = aimD.value; AudioFX.click(); aimSave(); };
 
+    // ── 📱 THIẾT BỊ (🖥️ PC / 📱 Mobile) — đổi chế độ điều khiển, lưu 'ss_device' ──
+    // Mobile.init() đã tự chọn theo thiết bị; 2 nút này cho đổi tay bất cứ lúc nào
+    const devRender = () => {
+      const mob = !!(window.Mobile && Mobile.enabled);
+      $('devPC').classList.toggle('active', !mob);
+      $('devMobile').classList.toggle('active', mob);
+    };
+    $('devPC').onclick = () => { AudioFX.click(); if (window.Mobile) Mobile.setEnabled(false); devRender(); };
+    $('devMobile').onclick = () => {
+      AudioFX.click();
+      if (window.Mobile) {
+        Mobile.setEnabled(true);
+        if (window.showToast) window.showToast('📱 Chế độ MOBILE — nút cảm ứng trên màn hình');
+      }
+      devRender();
+    };
+    devRender();
+
     this.refreshScores();
     this._previewLoop();
   },

@@ -35,6 +35,10 @@ window.Level = {
       if (c !== -1) { this.spawn = { x: c * this.T, y: r * this.T }; break; }
     }
     if (def.playerSpawn) this.spawn = { x: def.playerSpawn.x, y: def.playerSpawn.y };
+    // map DM không có 'P'/playerSpawn (chơi SINH TỔN trên map DM) → dùng điểm spawn đội A
+    else if (def.spawns && def.spawns.A && def.spawns.A[0]) {
+      this.spawn = { x: def.spawns.A[0][0], y: def.spawns.A[0][1] };
+    }
 
     // canvas vết máu — kích thước bằng map
     this.stains = document.createElement('canvas');

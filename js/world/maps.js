@@ -57,6 +57,12 @@ window.Maps = {
       '##################...#######################################',
     ],
     playerSpawn: { x: 4 * 32, y: 20 * 32 - 52 },
+    /* đội spawn cho ĐẤU ĐỘI trên map này + làm điểm trồi quái cho SINH TỒN
+     * (sàn chính trái/phải né hố kẹt cột 18-20 + điểm cao rơi xuống như bộ điểm gốc) */
+    spawns: {
+      A: [[64, 652], [185, 652], [300, 652], [400, 236], [900, 236]],
+      B: [[1856, 652], [1741, 652], [1626, 652], [1500, 236]],
+    },
     /* ☠️ HAZARD — cột ô của ống ga/cột điện (né tháp bê tông cột 24-27 & 34-35,
      * né điểm spawn P cột 4): ống ga cột 8 (trên dầm trái) · cột 47 (gần mép phải);
      * cặp cột điện 40-44 phóng tia ngang trên sàn phải */

@@ -18,10 +18,12 @@
 
   /* ============ API cho menu (DOM) gọi vào ============ */
   window.Game = {
-    startWave() {
+    startWave(mapId) {
       AudioFX.ensure();
       mode = 'wave'; paused = false;
-      mapDef = Maps.deck;
+      // 🗺️ SINH TỔN chọn map được như Đấu Đội — nhớ lại map để "ĐÁNH LẠI" đúng chỗ
+      this._waveMap = mapId || this._waveMap || 'deck';
+      mapDef = Maps[this._waveMap];
       _setupLevel(mapDef);
       Player.create(Level.spawn, 'P', false); // wave: chỉ có súng lục + lục lọi
       // 🌐 co-op LAN: máy host TẠO THÊM người 2 (máy guest gửi phím sang, host mô phỏng hộ)
@@ -33,11 +35,14 @@
         // 🔧 Player.create gán Player.obj = người MỚI NHẤT — phải trả về NGƯỜI 1
         // (không thì host update nhầm người 2, người 1 đóng băng, input đè nhau!)
         Player.obj = Player.list[0];
-        Net.send({ t: 'start', mapId: 'deck' });
+        Net.send({ t: 'start', mapId: mapDef.id }); // gửi đúng map đang chọn
       }
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
       Props.spawnForMap(mapDef); // 🛢️ vật thể phá được — chỉ chế độ Sinh tồn (vàng rơi chỉ nghiêng về wave)
       if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện — đọc từ mapDef
+      // 👹 quái trồi tại các điểm spawn CỦA MAP (mặc định: bộ điểm của Boong tàu)
+      const sp = mapDef.spawns;
+      Wave.spawnPoints = (sp && sp.A) ? [...sp.A, ...sp.B] : Config.WAVE.SPAWNS;
       Wave.start();
       Menu.hideAll();
       AudioFX.startMusic();

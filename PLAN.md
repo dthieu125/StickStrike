@@ -572,6 +572,18 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **108/108 test logic PASS ×3 lần chạy** (thêm test chống chìm: props ×30 lần rải không
       đè ô đặc · súng không chìm hàng đáy · cột điện né tháp bê tông)
 
+### 🔧 SỬA MENU (góp ý người chơi) — cột phải đỡ dài + Sinh Tồn chọn map được
+
+- [x] **🎨 Menu gọn**: khối 🛠️ TIỆN ÍCH (Market / Cài Đặt / Mẹo Chơi) dời xuống CỘT PHẢI,
+      dưới canvas người que động + gợi ý phím — cột trái chỉ còn CHẾ ĐỘ CHƠI, hết tràn màn hình
+- [x] **🗺️ SINH TỔN chọn map được như Đấu Đội**: map picker dùng CHUNG cho cả 2 chế độ
+      (đặt trên cùng nhóm 🎮 CHẾ ĐỘ CHƠI, có đủ 5 map gồm cả Boong tàu) — chọn 1 phát,
+      mode nào cũng xài; map DM giờ là map Sinh Tồn hợp lệ: người chơi spawn tại điểm
+      đội A (chân chạm sàn), quái trồi tại các điểm spawn của map (Boong tàu được thêm
+      spawns 2 đội); "ĐÁNH LẠI" giữ đúng map; co-op LAN gửi đúng mapId sang máy guest
+- [x] **109/109 test logic PASS ×3 lần chạy** (thêm test: spawn Sinh Tồn trên map DM +
+      deck ưu tiên playerSpawn + điểm trồi quái trong biên map)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -622,7 +634,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 + sửa lỗi playtest (item chìm · menu nhóm · Đấu Đội) — 108/108 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 + sửa lỗi playtest (item chìm · menu nhóm · Sinh Tồn chọn map) — 109/109 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

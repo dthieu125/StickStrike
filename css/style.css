@@ -212,6 +212,10 @@ canvas#game {
 .menu-left { flex: 1.2; display: flex; flex-direction: column; gap: 12px; }
 .menu-right { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #preview { background: rgba(4, 8, 16, 0.7); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); }
+/* khối TIỆN ÍCH ở cột phải — menu trái đỡ dài, không tràn màn hình */
+.menu-tools { width: 100%; max-width: 240px; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.menu-tools .btn { width: 100%; text-align: left; }
+.menu-tools .group-title { text-align: center; }
 
 .btn {
   font-family: inherit;

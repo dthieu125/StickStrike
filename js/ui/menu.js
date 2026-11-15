@@ -4,7 +4,8 @@
  * muốn "xa xỉ" hơn sau này có thể cắm Anime.js v4 animate các panel này.
  * ========================================================= */
 window.Menu = {
-  dmMaps: ['hangar', 'reactor', 'cargo', 'forest'],
+  /* 🗺️ MAP dùng chung cho SINH TỔN lẫn ĐẤU ĐỘI — chọn 1 phát, chế độ nào cũng xài */
+  maps: ['deck', 'hangar', 'reactor', 'cargo', 'forest'],
   mapIndex: 0,
   game: null, // API từ main.js: { startWave, startDM, resume, toMenu, restartWave, restartDM }
   previewPhase: 0,
@@ -21,15 +22,16 @@ window.Menu = {
     };
 
     // nút menu chính
-    $('btnWave').onclick = () => { AudioFX.click(); this.game.startWave(); };
-    // 🤖 ĐẤU ĐỘI: bấm = MỞ/ĐÓNG panel thiết lập (map · số người · điểm thắng) — vào trận ở nút ▶ VÀO TRẬN
+    // 🗺️ map chọn 1 lần — SINH TỔN lẫn ĐẤU ĐỘI đều chơi trên map đang chọn
+    $('btnWave').onclick = () => { AudioFX.click(); this.game.startWave(this.maps[this.mapIndex]); };
+    // 🤖 ĐẤU ĐỘI: bấm = MỞ/ĐÓNG panel thiết lập (số người · điểm thắng) — vào trận ở nút ▶ VÀO TRẬN
     $('btnDM').onclick = () => {
       AudioFX.click();
       const setup = document.getElementById('dmSetup');
       setup.classList.toggle('hidden');
       this._updateMapName(); // lần đầu mở phải có tên map đúng
     };
-    $('btnDMStart').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
+    $('btnDMStart').onclick = () => { AudioFX.click(); this.game.startDM(this.maps[this.mapIndex]); };
     $('btnNet').onclick = () => { AudioFX.click(); this.show('net'); };
     $('btnNetBack').onclick = () => {
       AudioFX.click();
@@ -57,7 +59,7 @@ window.Menu = {
     // ⚔️ máy chủ bấm ĐỐI ĐẦU khi đã đủ 2 người — mỗi đội 1 người thật + bot đi kèm
     $('btnNetDM').onclick = () => {
       AudioFX.click();
-      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startNetDM(this.dmMaps[this.mapIndex]);
+      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startNetDM(this.maps[this.mapIndex]);
     };
     $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
@@ -67,8 +69,8 @@ window.Menu = {
     $('btnSettings').onclick = () => { AudioFX.click(); this.show('settings'); this._drawAimPreview(); this._lookPreview(); };
     $('btnSettingsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
     $('btnKeysOpen').onclick = () => { AudioFX.click(); this.show('keys'); };
-    $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.dmMaps.length - 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
-    $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
+    $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.maps.length - 1) % this.maps.length; this._updateMapName(); AudioFX.click(); };
+    $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.maps.length; this._updateMapName(); AudioFX.click(); };
 
     // ── tuỳ chọn ĐẤU ĐỘI (dùng chung cho chơi đơn lẫn ĐỐI ĐẦU qua mạng):
     // số người/đội (1-10) + điểm thắng (5-100, bước 5) — áp dụng cho trận tiếp theo
@@ -106,7 +108,7 @@ window.Menu = {
       if (window.Net && Net.mode === 'host' && Net.peer && this.game._netDMMap) {
         this.game.startNetDM(this.game._netDMMap);
       } else {
-        this.game.startDM(this.dmMaps[this.mapIndex]);
+        this.game.startDM(this.maps[this.mapIndex]);
       }
     };
     $('btnGoMenu2').onclick = () => { AudioFX.click(); this.game.toMenu(); };
@@ -205,7 +207,7 @@ window.Menu = {
   },
 
   _updateMapName() {
-    this.el.mapName.textContent = Maps[this.dmMaps[this.mapIndex]].name;
+    this.el.mapName.textContent = Maps[this.maps[this.mapIndex]].name;
   },
 
   /* Cập nhật CHỮ GỢI Ý PHÍM theo bind hiện tại — đổi phím ở menu là chữ tự đổi theo */

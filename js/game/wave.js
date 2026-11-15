@@ -9,6 +9,7 @@ window.Wave = {
   over: false,           // true = game đã kết thúc (đóng băng mọi thứ, chỉ còn hiệu ứng)
   timer: 0,
   queue: [],           // danh sách quái chờ trồi lên [{type, delay}]
+  spawnPoints: null,   // ☠️ điểm trồi quái THEO MAP (mặc định = Config.WAVE.SPAWNS)
   score: 0, kills: 0,
 
   /* ── MODIFIER chọn 1/3 giữa wave (kế hoạch chuyên gia) ──
@@ -75,6 +76,7 @@ window.Wave = {
     this.bossCleared = false;
     this.nextNodes = null; this.nodeOpen = false; this.resting = false;
     this.lastRest = false; this.nodeType = null; this.pendingElite = false;
+    this.spawnPoints = null; // main.js gán điểm trồi theo map trước khi start
     window.Nodes && Nodes.hide();
     this.state = 'countdown';
     this.timer = Config.WAVE.COUNTDOWN;
@@ -345,7 +347,7 @@ window.Wave = {
         this.spawnT -= dt;
         if (this.queue.length > 0 && this.spawnT <= 0) {
           const item = this.queue.shift();
-          const spots = Config.WAVE.SPAWNS;
+          const spots = this.spawnPoints || Config.WAVE.SPAWNS; // điểm trồi THEO MAP đang chơi
           const sp = spots[Math.floor(Math.random() * spots.length)];
           // 🎲 event QUÁI CUỒNG TỐC: quái wave này nhanh hơn (đút mult vào lúc spawn)
           // 👹 ELITE: nhanh hơn ×1.15 + TRÂU hơn ×1.35 (hpMul)

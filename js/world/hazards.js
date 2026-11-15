@@ -18,12 +18,17 @@ window.Hazards = {
 
   clear() { this.list.length = 0; },
 
-  /* đọc mapDef.hazards → dựng danh sách hazard với toạ độ px + mặt đất */
+  /* đọc mapDef.hazards → dựng danh sách hazard với toạ độ px + mặt đất.
+   * Ô cột phải TRỐNG 2 ô ngay trên mặt đất (ống cao 46px) — không cắm vào bê tông! */
   spawnForMap(mapDef) {
     this.clear();
+    const clearAbove = (c, baseY) => {
+      const r0 = baseY / Level.T - 1;
+      return Level.tileAt(c, r0) === '.' && Level.tileAt(c, r0 - 1) === '.';
+    };
     for (const h of (mapDef.hazards || [])) {
       const floorY = this._floorTop(h.c);
-      if (floorY >= Level.pxH) continue; // cột không có mặt đất → bỏ qua
+      if (floorY >= Level.pxH || !clearAbove(h.c, floorY)) continue; // cột không có chỗ trống → bỏ qua
       if (h.kind === 'gas') {
         this.list.push({
           kind: 'gas', x: h.c * Level.T + Level.T / 2, y: floorY,
@@ -33,7 +38,7 @@ window.Hazards = {
         });
       } else if (h.kind === 'zap' && h.c2 != null) {
         const floorY2 = this._floorTop(h.c2);
-        if (floorY2 >= Level.pxH) continue;
+        if (floorY2 >= Level.pxH || !clearAbove(h.c2, floorY2)) continue;
         this.list.push({
           kind: 'zap', x1: h.c * Level.T + Level.T / 2, x2: h.c2 * Level.T + Level.T / 2,
           y1: floorY, y2: floorY2,

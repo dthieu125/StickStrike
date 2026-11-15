@@ -557,6 +557,21 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **107/107 test logic PASS ×3 lần chạy** (thêm 3 test: queue boss nhỏ · cuồng nộ/nhảy đè ·
       hazard spawn/gas tick/zap qua biên CHARGE)
 
+### 🔧 SỬA LỖI PLAYTEST — GĐ 19/20 (item chìm trong bê tông + menu nhóm + Đấu Đội tiếng Việt)
+
+- [x] **🧱 Item chôn trong khối bê tông** (góp ý người chơi): Props dùng `_baseYAt` = mặt sàn
+      THẤP NHẤT của cột → trên map có tháp/container ngay trên sàn, thùng nổ/gỗ/ống ga bị
+      CHÔN trong bê tông mà vẫn bắn trúng được → đổi sang logic "điểm đứng được" như súng rải
+      (trống 2 ô trên đầu) — vật nằm TRÊN ĐỈNH container/bậc thềm là hợp lý, không bao giờ
+      chìm; súng rải bỏ HÀNG ĐÁY (hố kẹt giữa 2 mảng sàn cột 18-20 map Boong tàu); hazard
+      (ống ga/cột điện) cũng thêm chống chìm + dời cặp cột điện map Boong tàu khỏi tháp 24-27
+- [x] **🇻🇳 DEATHMATCH → ĐẤU ĐỘI** (tiếng Việt) + menu gom NHÓM: nhóm 🎮 CHẾ ĐỘ CHƠI
+      (Sinh tồn / Đấu Đội / 2 Người Qua Mạng) + nhóm 🛠️ TIỆN ÍCH (Market / Cài Đặt / Mẹo);
+      bấm ĐẤU ĐỘI mở panel THIẾT LẬP riêng (chọn map · số người/đội · số kill thắng ·
+      nút ▶ VÀO TRẬN) — các tuỳ chọn thuộc về đúng chế độ của nó, menu gọn hơn
+- [x] **108/108 test logic PASS ×3 lần chạy** (thêm test chống chìm: props ×30 lần rải không
+      đè ô đặc · súng không chìm hàng đáy · cột điện né tháp bê tông)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -607,7 +622,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 (LAN co-op + đối đầu + CÀI ĐẶT + boss nhỏ + hazard/parallax) — 107/107 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-20 + sửa lỗi playtest (item chìm · menu nhóm · Đấu Đội) — 108/108 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

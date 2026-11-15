@@ -18,11 +18,17 @@ window.Props = {
   spawnForMap(mapDef) {
     this.clear();
     const P = Config.PROPS;
-    // dò các cột có sàn để đứng (mặt đất thấp nhất)
+    // dò các điểm "đứng được" (sàn/bệ/container, trống trên đầu) — GIỐNG Pickups._standSpots:
+    // vật có thể nằm TRÊN ĐỈNH container/bậc thềm (hợp lý) nhưng KHÔNG BAO GIỜ chôn trong bê tông
     const spots = [];
-    for (let c = 0; c < Level.cols; c++) {
-      const baseY = this._baseYAt(c);
-      if (baseY < Level.pxH) spots.push({ x: c * Level.T + Level.T / 2, baseY });
+    for (let r = 2; r < Level.rows - 2; r++) { // bỏ hàng đáy — không nhồi vật xuống hố kẹt
+      for (let c = 2; c < Level.cols - 2; c++) {
+        if (Level.tileAt(c, r) !== '.') continue;
+        const below = Level.tileAt(c, r + 1);
+        if (!Level.isSolid(below) && !Level.isOneWay(below)) continue;
+        if (Level.tileAt(c, r - 1) !== '.' || Level.tileAt(c, r - 2) !== '.') continue;
+        spots.push({ x: c * Level.T + Level.T / 2, baseY: (r + 1) * Level.T });
+      }
     }
     if (!spots.length) return 0;
     // tránh chỗ xuất phát của 2 đội (cả wave lẫn DM)

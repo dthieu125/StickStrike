@@ -22,7 +22,14 @@ window.Menu = {
 
     // nút menu chính
     $('btnWave').onclick = () => { AudioFX.click(); this.game.startWave(); };
-    $('btnDM').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
+    // 🤖 ĐẤU ĐỘI: bấm = MỞ/ĐÓNG panel thiết lập (map · số người · điểm thắng) — vào trận ở nút ▶ VÀO TRẬN
+    $('btnDM').onclick = () => {
+      AudioFX.click();
+      const setup = document.getElementById('dmSetup');
+      setup.classList.toggle('hidden');
+      this._updateMapName(); // lần đầu mở phải có tên map đúng
+    };
+    $('btnDMStart').onclick = () => { AudioFX.click(); this.game.startDM(this.dmMaps[this.mapIndex]); };
     $('btnNet').onclick = () => { AudioFX.click(); this.show('net'); };
     $('btnNetBack').onclick = () => {
       AudioFX.click();
@@ -63,8 +70,8 @@ window.Menu = {
     $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.dmMaps.length - 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
     $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.dmMaps.length; this._updateMapName(); AudioFX.click(); };
 
-    // ── tuỳ chọn DEATHMATCH: số người/đội (1-10) + điểm thắng (5-100, bước 5) ──
-    // chỉnh ngay tại menu, áp dụng cho trận tiếp theo (Match đọc Config.DM mỗi frame)
+    // ── tuỳ chọn ĐẤU ĐỘI (dùng chung cho chơi đơn lẫn ĐỐI ĐẦU qua mạng):
+    // số người/đội (1-10) + điểm thắng (5-100, bước 5) — áp dụng cho trận tiếp theo
     const dmSizeRender = () => { $('dmSizeLabel').textContent = '👥 ' + Config.DM.TEAM_SIZE + ' người/đội'; };
     $('dmSizeMinus').onclick = () => { Config.DM.TEAM_SIZE = Math.max(1, Config.DM.TEAM_SIZE - 1); dmSizeRender(); AudioFX.click(); };
     $('dmSizePlus').onclick = () => { Config.DM.TEAM_SIZE = Math.min(10, Config.DM.TEAM_SIZE + 1); dmSizeRender(); AudioFX.click(); };

@@ -57,13 +57,13 @@ window.Maps = {
       '##################...#######################################',
     ],
     playerSpawn: { x: 4 * 32, y: 20 * 32 - 52 },
-    /* ☠️ HAZARD — cột ô của ống ga/cột điện (cách xa điểm spawn P + lỗ hổng giữa map):
-     * ống ga cột 8 (trên dầm trái) · cột 47 (gần mép phải);
-     * cặp cột điện 25-29 phóng tia ngang trên dầm giữa */
+    /* ☠️ HAZARD — cột ô của ống ga/cột điện (né tháp bê tông cột 24-27 & 34-35,
+     * né điểm spawn P cột 4): ống ga cột 8 (trên dầm trái) · cột 47 (gần mép phải);
+     * cặp cột điện 40-44 phóng tia ngang trên sàn phải */
     hazards: [
       { kind: 'gas', c: 8 },
       { kind: 'gas', c: 47 },
-      { kind: 'zap', c: 25, c2: 29 },
+      { kind: 'zap', c: 40, c2: 44 },
     ],
   },
 

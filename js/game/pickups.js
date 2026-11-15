@@ -128,10 +128,11 @@ window.Pickups = {
   },
 
   /* Các điểm "đứng được" trên map (sàn/bậc thềm, trống trên đầu) — dùng chung
-   * cho việc rải súng lẫn đặt cục hồi máu. Trả về mảng {x, y} (y = mặt sàn). */
+   * cho việc rải súng lẫn đặt cục hồi máu. Trả về mảng {x, y} (y = mặt sàn).
+   * Bỏ HÀNG ĐÁY (r ≥ rows-2): súng rơi xuống hố kẹt giữa 2 mảng sàn là vô lý. */
   _standSpots() {
     const spots = [];
-    for (let r = 2; r < Level.rows - 1; r++) {
+    for (let r = 2; r < Level.rows - 2; r++) {
       for (let c = 2; c < Level.cols - 2; c++) {
         if (Level.tileAt(c, r) !== '.') continue;
         const below = Level.tileAt(c, r + 1);

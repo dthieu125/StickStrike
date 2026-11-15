@@ -23,7 +23,7 @@
       mode = 'wave'; paused = false;
       // 🗺️ SINH TỔN chọn map được như Đấu Đội — nhớ lại map để "ĐÁNH LẠI" đúng chỗ
       this._waveMap = mapId || this._waveMap || 'deck';
-      mapDef = Maps[this._waveMap];
+      mapDef = Maps[this._waveMap] || Maps.deck; // map lạ/không có → Boong tàu cho an toàn
       _setupLevel(mapDef);
       Player.create(Level.spawn, 'P', false); // wave: chỉ có súng lục + lục lọi
       // 🌐 co-op LAN: máy host TẠO THÊM người 2 (máy guest gửi phím sang, host mô phỏng hộ)
@@ -46,7 +46,7 @@
       Wave.start();
       Menu.hideAll();
       AudioFX.startMusic();
-      showToast('🌊 Sống sót hết chồng quái nhé! Súng rải trên map — lụm bằng ' + Input.boundKey('pickup'));
+      showToast('🌊 ' + mapDef.name + ' — Sống sót hết chồng quái nhé! Súng rải trên map — lụm bằng ' + Input.boundKey('pickup'));
     },
     startDM(mapId) {
       AudioFX.ensure();

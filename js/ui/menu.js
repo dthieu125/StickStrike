@@ -51,10 +51,10 @@ window.Menu = {
       const ip = $('netIP').value;
       if (Net.join(ip)) this._netPoll();
     };
-    // máy chủ bấm SINH TỔN khi đã đủ 2 người
+    // máy chủ bấm SINH TỔN khi đã đủ 2 người — dùng đúng map đang chọn ở menu
     this.el.netStart.onclick = () => {
       AudioFX.click();
-      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startWave();
+      if (window.Net && Net.mode === 'host' && Net.peer) this.game.startWave(this.maps[this.mapIndex]);
     };
     // ⚔️ máy chủ bấm ĐỐI ĐẦU khi đã đủ 2 người — mỗi đội 1 người thật + bot đi kèm
     $('btnNetDM').onclick = () => {

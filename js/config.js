@@ -32,6 +32,26 @@ window.Config = {
     BOX_MIN: 0.5,        // ít nhất 50% băng đầy
     SPARE_CAP: 2,        // dự trữ tối đa = 2 × băng đầy (không tích trữ vô hạn)
     BOXES_PER_MAP: 4,    // số hộp đạn rải xen kẽ với súng
+    /* 🔫 hộp đạn GATLING (khẩu độc quyền chợ): chỉ 10% số hộp là của Gatling,
+     *    hộp nào trúng thì +100 viên và PHÁT ÁNH SÁNG VÀNG để dễ nhận ra */
+    GAT_CHANCE: 0.1,
+    GAT_AMOUNT: 100,
+  },
+
+  /* ── 🔫 SÚNG ĐỘC QUYỀN CHỢ — bán duy nhất ở 🏪 MARKET bằng vàng tích luỹ ──
+   * price    = giá mua khẩu (mua 1 lần, SỞ HỮU VĨNH VIỄN — lưu ss_guns)
+   * startAmmo= đạn dự trữ nhận khi vừa mua / vào trận (GIỚI HẠN — hết phải kiếm)
+   * maxMag   = băng đạn ở nâng cấp MAX
+   * upgBase  = mốc giá nâng cấp (nhân ×2 rồi làm tròn bội số mult8) */
+  MARKET_GUNS: {
+    gatling: { price: 8888, startAmmo: 100, maxMag: 500, upgBase: 500, upgX2: 2, mult8: 8 },
+  },
+
+  /* ── 🛒 CỬA HÀNG giữa wave (vẽ bằng canvas, bấm bằng chuột/touch) ── */
+  SHOP: {
+    REFILL: 50,         // nạp đầy đạn mọi khẩu thường
+    MEDKIT: 75,         // hồi 50 máu
+    GAT_AMMO_PRICE: 88, // 🔫 100 viên đạn Gatling (đạn giới hạn của khẩu độc quyền)
   },
 
   // Vũ trụ nền

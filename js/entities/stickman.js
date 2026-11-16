@@ -256,6 +256,14 @@ function _drawGun(ctx, w, sx, sy, angle, kick, H, o) {
       ctx.fillStyle = GUN_DARK;
       ctx.fillRect(19, -4.5, 2, 9); ctx.fillRect(26, -4.5, 2, 9); ctx.fillRect(33, -4.5, 2, 9); // nòng quay
       break;
+    case 'gatling':
+      /* 🔫 GATLING 11 nòng — to hơn minigun, vành đồng + nòng VÀNG (khẩu độc quyền chợ) */
+      ctx.fillStyle = GUN_DARK; ctx.fillRect(0, -7, 15, 14);
+      ctx.fillStyle = '#8a6d1f'; ctx.fillRect(15, -5.5, 8, 11);   // hộp đạn đồng
+      ctx.fillStyle = GUN_METAL; ctx.fillRect(23, -4.5, 21, 9);
+      ctx.fillStyle = '#6b5416';                                  // các nòng quay vàng đồng
+      for (let i = 0; i < 4; i++) ctx.fillRect(26 + i * 5, -4.5, 2.2, 9);
+      break;
     case 'sniper':
       ctx.fillStyle = '#3e5c48'; ctx.fillRect(0, -2.5, 26, 5.5);
       ctx.fillStyle = GUN_METAL; ctx.fillRect(26, -1.8, 20, 3.5);

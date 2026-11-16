@@ -74,7 +74,6 @@ window.Player = {
         : null,                   // 🪖 TRANG BỊ RIÊNG TỪNG NGƯỜI (co-op: mỗi máy 1 bộ)
       reviveT: 0,                 // 🤝 co-op: đồng đội đang cứu (giây tích luỹ)
 
-      /* đăng ký làm mục tiêu cho đạn */
       hit(dmg, isHead, hx, hy, shooterTeam) {
         if (this.dead || this.hp <= 0) return 0;
         if (this.iframe > 0) { // 🏃 DASH né đạn: bất tử trong lúc lướt
@@ -139,6 +138,26 @@ window.Player = {
     else this.list.push(p);        // người chơi 2 → thêm vào co-op
     // súng được TẶNG lúc vào game → đạn vô hạn (súng LỤM trên map mới bị giới hạn)
     Weapons.list.forEach((w, i) => { if (p.owned.has(w.id)) p.spare[i] = Infinity; });
+
+    /* 🔫 SÚNG ĐỘC QUYỀN CHỢ (Gatling...) — máy này được mang KHẨU CỦA MÌNH vào trận:
+     * host = người 1 (idx 0) · guest = người 2 (idx 1). Đạn GIỚI HẠN (startAmmo),
+     * khác mọi súng mua trong trận (∞) — đúng kinh tế hộp đạn vàng + 88💰/100 viên.
+     * (Bạn 2 qua mạng: host nhận thêm tin nhắn 'guns' để mở khoá GIỮ HỘ.) */
+    {
+      const localIdx = (window.Net && Net.mode === 'guest') ? 1 : 0;
+      if ((idx || 0) === localIdx && window.MarketGuns && MarketGuns.count() > 0) {
+        for (const gid of MarketGuns.owned()) {
+          const gw = Weapons.list.find((x) => x.id === gid);
+          const G = window.Config && Config.MARKET_GUNS[gid];
+          if (!gw || !G) continue;
+          const gi = Weapons.list.indexOf(gw);
+          p.owned.add(gid);
+          p.mags[gi] = (window.GunUp ? GunUp.mag(gw) : gw.mag);
+          p.spare[gi] = G.startAmmo; // đè lại ∞ ở trên → đạn GIỚI HẠN
+        }
+      }
+    }
+
     Combatants.register(p);
     return p;
   },
@@ -365,8 +384,9 @@ window.Player = {
 
     /* ── 7. BẮN (cửa hàng mở thì chỉ được đi mua đồ) ── */
     p.cooldown -= dt;
-    // 🔧 minigun cấp 3+: GIỮ bắn phụ (chuột phải/E) = QUAY NÒNG — tản đạn giảm dần, đi chậm
-    p.spin = (w.id === 'minigun' && window.GunUp && GunUp.altOpen(w) && !shopBlocks
+    // 🔫 súng máy QUAY NÒNG cấp 3+ (minigun + Gatling): GIỮ bắn phụ (chuột phải/E)
+    //    = quay nòng — tản đạn giảm dần gần 0, đổi lại đi chậm
+    p.spin = (w.spinAlt && window.GunUp && GunUp.altOpen(w) && !shopBlocks
       && (inp.mouse.rdown || inp.isDown('altfire'))) ? Math.min(1, (p.spin || 0) + dt / 1.1) : 0;
     const wantFire = !shopBlocks && (w.auto ? inp.mouse.down : inp.mouse.pressed);
     if (wantFire && p.reloading <= 0 && p.cooldown <= 0) {

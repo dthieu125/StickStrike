@@ -149,6 +149,8 @@
     // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
     const g = (window.Gear && Gear.state) ? Gear.state : {};
     Net.send({ t: 'gear', g: { helmet: !!g.helmet, armor: !!g.armor, shield: g.shield || 0 } });
+    // 🔫 súng ĐỘC QUYỀN mình mua ở chợ — host mở khoá GIỮ HỘ (đạn giới hạn)
+    if (window.MarketGuns) Net.send({ t: 'guns', ids: MarketGuns.owned() });
     Menu.hideAll();
     AudioFX.startMusic();
     showToast('🤝 Đã vào trận! Bạn là NGƯỜI 2 (màu cam) — giữ gần đồng đội để cứu nhau.');
@@ -173,6 +175,8 @@
     // gửi BỘ TRANG BỊ MARKET của mình sang host (host mô phỏng damage GIỮ HỘ)
     const g = (window.Gear && Gear.state) ? Gear.state : {};
     Net.send({ t: 'gear', g: { helmet: !!g.helmet, armor: !!g.armor, shield: g.shield || 0 } });
+    // 🔫 súng ĐỘC QUYỀN mình mua ở chợ — host mở khoá GIỮ HỘ (đạn giới hạn)
+    if (window.MarketGuns) Net.send({ t: 'guns', ids: MarketGuns.owned() });
     Match.start(mapDef, 0);  // KHÔNG tạo bot — bot thật do host mô phỏng, snapshot dựng lại
     Net._monMap = {}; Net._botMap = {};
     _gNodeOpen = false; _gOverShown = false; _gEndShown = false;
@@ -261,6 +265,21 @@
             Player.list[1].gear = { helmet: !!m.g.helmet, armor: !!m.g.armor, shield: m.g.shield || 0 };
           }
           break;
+        case 'guns': { // 🔫 súng ĐỘC QUYỀN Market của bạn 2 — host mở khoá GIỮ HỘ (đạn giới hạn)
+          const p2 = Player.list[1];
+          if (p2 && Array.isArray(m.ids)) {
+            for (const gid of m.ids) {
+              const G = Config.MARKET_GUNS[gid];
+              const gw = Weapons.list.find((x) => x.id === gid);
+              if (!G || !gw || p2.owned.has(gid)) continue;
+              const gi = Weapons.list.indexOf(gw);
+              p2.owned.add(gid);
+              p2.mags[gi] = (window.GunUp ? GunUp.mag(gw) : gw.mag);
+              p2.spare[gi] = G.startAmmo;
+            }
+          }
+          break;
+        }
         case 'wi': { // 🔫 bạn 2 đổi súng (số 1-0 / bấm thanh súng ở máy nó)
           const p2 = Player.list[1];
           if (p2 && p2.hp > 0) Player.selectWeapon(p2, m.i);
@@ -813,18 +832,20 @@
       const d = wbarSlots[i];
       const owned = p.owned.has(w.id);
       const active = i === p.wi;
+      // 🔫 khẩu thứ 11+ (Gatling — mua ở 🏪 Market) không còn phím số → đánh dấu ★
+      const num = i < 9 ? String(i + 1) : (i === 9 ? '0' : '★');
       d.className = 'wslot' + (active ? ' active' : '') + (owned ? '' : ' locked');
       if (owned) {
         const sp = p.spare ? p.spare[i] : Infinity;
         const ammoText = p.mags[i] + (sp === Infinity ? '/∞' : '+' + sp);
-        d.innerHTML = '<span class="num">' + ((i + 1) % 10) + '</span>' +
+        d.innerHTML = '<span class="num">' + num + '</span>' +
           '<span class="nm">' + w.short + '</span>' +
           '<span class="ammo">' + ammoText + '</span>';
       } else if (mode === 'wave') {
-        d.innerHTML = '<span class="num">' + ((i + 1) % 10) + '</span>' +
-          '<span class="nm">🔒</span><span class="ammo">' + w.price + '💰</span>';
+        d.innerHTML = '<span class="num">' + num + '</span>' +
+          '<span class="nm">🔒</span><span class="ammo">' + (w.marketOnly ? '🏪 chợ' : w.price + '💰') + '</span>';
       } else {
-        d.innerHTML = '<span class="num">' + ((i + 1) % 10) + '</span>' +
+        d.innerHTML = '<span class="num">' + num + '</span>' +
           '<span class="nm">🔒</span><span class="ammo">lụm trên map</span>';
       }
     });

@@ -72,6 +72,7 @@ window.Weapons = {
       kind: 'hitscan', range: 1400,
       gunStyle: 'minigun', barrelLen: 22, bodyLen: 16,
       sound: 'minigun', tracerColor: '#ffbf66', tracerWidth: 1.5,
+      spinAlt: true, // giữ bắn phụ (chuột phải/E) = QUAY NÒNG — tản đạn giảm dần
       alt: { name: 'QUAY NÒNG (giữ)', desc: 'Giữ bắn phụ để quay nòng — tản đạn giảm dần gần 0, đi chậm', delay: 0 },
       perk: { name: 'Băng đôi', desc: 'Băng đạn thêm +25%' },
     },
@@ -114,6 +115,22 @@ window.Weapons = {
       sound: 'plasma',
       alt: { name: 'CẦU NẢY', desc: 'Cầu plasma NẢY tường tới 3 lần rồi mới nổ', delay: 0.4 },
       perk: { name: 'Lõi ổn định', desc: 'Vùng nổ rộng hơn +15%' },
+    },
+    {
+      /* ── 🔫 GATLING — khẩu ĐỘC QUYỀN chỉ bán ở 🏪 MARKET (8888 vàng tích luỹ) ──
+       * ĐẠN GIỚI HẠN (khác mọi súng mua trong trận = ∞): nạp dự trữ bằng
+       *   • hộp đạn VÀNG hiếm trên map (10%/hộp, hộp nào ra là +100 viên)
+       *   • mua 100 viên 88💰 ở cửa hàng giữa wave
+       * Nâng cấp băng 100 → 500 viên ở MAX · giá lên cấp = bội số của 8, đắt gấp 2 */
+      id: 'gatling', name: 'Gatling 11 nòng', short: 'GAT', price: 8888, marketOnly: true,
+      damage: 6, fireDelay: 0.028, auto: true, pellets: 1, spread: 0.075,
+      mag: 100, reload: 3.6, recoil: 0.08, shake: 0.5, flash: 0.95,
+      kind: 'hitscan', range: 1300,
+      gunStyle: 'gatling', barrelLen: 28, bodyLen: 16,
+      sound: 'minigun', tracerColor: '#ffe066', tracerWidth: 1.5,
+      spinAlt: true, // giữ bắn phụ = QUAY NÒNG (giống súng máy quay)
+      alt: { name: 'QUAY NÒNG (giữ)', desc: 'Giữ bắn phụ để quay nòng — tản đạn giảm dần gần 0, đi chậm', delay: 0 },
+      perk: { name: 'Băng thép', desc: 'Băng đạn thêm +10%' },
     },
   ],
 };

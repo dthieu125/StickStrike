@@ -602,6 +602,23 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
       nút 🛒 = "bấm phím B ẢO" nên cửa hàng nhận đúng; guest mạng gửi input từ nút ảo
 - [x] **112/112 test logic PASS ×3 lần chạy**
 
+### 🔥 GĐ 22 — GATLING: khẩu ĐỘC QUYỀN chợ (theo yêu cầu người chơi)
+
+- [x] **🔥 Gatling 11 nòng** — bắn nhanh nhất game (~36 phát/s, dame 6, tản 0.075),
+  giữ bắn phụ = QUAY NÒNG như súng máy; vẽ nòng vàng đồng riêng (4 nòng + hộp đạn đồng)
+- [x] **Chỉ bán ở 🏪 MARKET — 8888 💰 vàng tích luỹ** (mua 1 lần sở hữu VĨNH VIỄN, lưu
+  `ss_guns`); KHÔNG bán trong cửa hàng trận, KHÔNG rải trên map (cả bot cũng không lụm được);
+  ô thanh súng thứ 11 hiển thị ★ (không có phím số — đổi bằng 🔄/lăn chuột)
+- [x] **Đạn GIỚI HẠN 100 viên** khi vừa mua/vào trận (khác mọi súng mua trong trận = ∞):
+  • **Hộp đạn VÀNG hiếm** trên map: 10%/hộp → +100 viên, thùng vàng bóng + hào quang
+  vàng rực + nhãn ✨📦 · • **Mua 100 viên 88💰** ở cửa hàng giữa wave (trần dự trữ 2 băng);
+  mục "Nạp đầy đạn mọi khẩu" 50💰 **bỏ qua** Gatling để không phá giá đạn
+- [x] **Nâng cấp riêng**: băng 100 → **500 viên ở MAX** (đường mũ ×5^(lv/10)); giá lên cấp =
+  **bội số của 8** (304 · 600 · 904... · MAX 3000) và **đắt gấp 2** khẩu đắt nhất (RAIL);
+  PERK lv6 "Băng thép" +10% (vẫn nẹp 500)
+- [x] **Co-op mạng**: máy guest gửi tin nhắn `guns` → host mở khoá GIỮ HỘ với đúng đạn giới hạn
+- [x] **117/117 test logic PASS ×3 lần chạy** (5 test Gatling mới)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -652,7 +669,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-21 (đã có ĐIỀU KHIỂN MOBILE) + sửa lỗi playtest — 112/112 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-22 (mobile + GATLING khẩu độc quyền chợ) — 117/117 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

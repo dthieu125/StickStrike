@@ -27,8 +27,15 @@ window.GunUp = {
 
   lvl(id) { return this.lv[id] || 0; },
 
-  /* Giá lên CẤP KẾ tiếp — càng lên càng đắt (lv0→1 rẻ nhất, lv4→5 đắt nhất) */
+  /* Giá lên CẤP KẾ tiếp — càng lên càng đắt (lv0→1 rẻ nhất, lv4→5 đắt nhất)
+   * 🔫 súng ĐỘC QUYỀN chợ (Gatling): đắt GẤP ĐÔI khẩu đắt nhất + làm tròn
+   *    BỘI SỐ CỦA 8 (8-theme: 8888 · 88 · 304 · 600 · 904...) */
   cost(w) {
+    const G = (w.marketOnly && Config.MARKET_GUNS) ? Config.MARKET_GUNS[w.id] : null;
+    if (G) {
+      const raw = G.upgBase * G.upgX2 * Config.UPGRADE.COST_MUL * (this.lvl(w.id) + 1);
+      return Math.ceil(raw / G.mult8) * G.mult8;
+    }
     const base = Math.max(w.price, Config.UPGRADE.COST_BASE_MIN);
     return Math.round(base * Config.UPGRADE.COST_MUL * (this.lvl(w.id) + 1));
   },
@@ -58,6 +65,10 @@ window.GunUp = {
       explodeRadius: w.explodeRadius,
       headMult: w.headMult,
     };
+    // 🔫 GATLING: băng đạn lên theo ĐƯỜNG MUỘT riêng — 100 viên gốc × 5^(lv/10)
+    // → lv5 ~224 viên · MAX (lv10) = 500 viên đúng như thiết kế
+    const G = (w.marketOnly && Config.MARKET_GUNS) ? Config.MARKET_GUNS[w.id] : null;
+    if (G) s.mag = Math.min(G.maxMag, Math.round(w.mag * Math.pow(5, lv / 10)));
     if (lv >= Config.UPGRADE.PERK_LV) {
       switch (w.id) {
         case 'pistol':  s.reload *= 0.85; break;              // nòng ngắn
@@ -66,6 +77,7 @@ window.GunUp = {
         case 'shotgun': s.pellets += 1; break;                // +1 viên bi
         case 'rifle':   s.pierceBase = 1; break;              // đạn AP xuyên 1 bia
         case 'minigun': s.mag = Math.round(s.mag * 1.25); break; // băng đôi
+        case 'gatling': s.mag = Math.min(G ? G.maxMag : s.mag, Math.round(s.mag * 1.10)); break; // băng thép
         case 'sniper':  s.headMult = 2.5; break;              // headshot ×2.5
         case 'rail':    s.reload *= 0.8; break;               // cuộn siêu dẫn
         case 'rocket':  s.explodeRadius = Math.round(s.explodeRadius * 1.2); break;

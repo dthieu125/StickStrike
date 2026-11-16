@@ -160,7 +160,8 @@ window.Pickups = {
     }
 
     // ── 2. Chọn điểm: tôn trọng khoảng cách tối thiểu, né chỗ spawn 2 đội ──
-    const guns = Weapons.list.filter((w) => w.id !== 'pistol'); // 9 khẩu rải
+    // 🔫 súng ĐỘC QUYỀN chợ (Gatling...) KHÔNG rải trên map — mua ở 🏪 Market
+    const guns = Weapons.list.filter((w) => w.id !== 'pistol' && !w.marketOnly); // 9 khẩu rải
     const avoid = mapDef.spawns ? [...mapDef.spawns.A, ...mapDef.spawns.B] : [];
     const SPAWN_CLEAR = 150; // súng cách điểm xuất phát ít nhất 150px
 
@@ -207,8 +208,10 @@ window.Pickups = {
     }
 
     // ── 3c. HỘP ĐẠN xen kẽ: đặt ở điểm đứng được KHÁC chỗ súng, cách xa chỗ spawn.
-    //    Khẩu trong hộp random (trừ súng lục), lượng random ≥ 50% băng đầy ──
+    //    Khẩu trong hộp random (trừ súng lục + khẩu độc quyền), lượng random ≥ 50% băng đầy.
+    //    🔫 10% cơ hội hộp là của GATLING: +100 viên, PHÁT ÁNH SÁNG VÀNG (pk.gold) ──
     const boxGuns = guns; // 9 khẩu (súng lục là đạn ∞ sẵn — không cần hộp)
+    const gat = Weapons.list.find((w) => w.marketOnly); // khẩu độc quyền (nếu có)
     const boxCount = Config.AMMO.BOXES_PER_MAP;
     // Xáo trộn pool rồi quét TUẦN TỰ — luôn đủ hộp nếu map còn chỗ đứng hợp lệ
     // (chỉ thử random vài chục lần là không đủ, map đông súng sẽ trượt hết)
@@ -221,10 +224,14 @@ window.Pickups = {
       if (placed >= boxCount) break;
       if (this.list.some((q) => Math.hypot(q.x - s.x, q.y - s.y) < 130)) continue; // tránh chồng chỗ súng
       if (avoid.some((sp) => Math.hypot(sp[0] - s.x, sp[1] - s.y) < SPAWN_CLEAR)) continue;
-      const bw = boxGuns[Math.floor(Math.random() * boxGuns.length)];
-      const amount = Math.max(1, Math.ceil(bw.mag * (Config.AMMO.BOX_MIN + Math.random() * (1 - Config.AMMO.BOX_MIN))));
+      // 🔫 10% hộp đạn là của GATLING (hiếm hơn hẳn) — luôn đủ 100 viên + vàng rực
+      const isGatBox = gat && Math.random() < Config.AMMO.GAT_CHANCE;
+      const bw = isGatBox ? gat : boxGuns[Math.floor(Math.random() * boxGuns.length)];
+      const amount = isGatBox ? Config.AMMO.GAT_AMOUNT
+        : Math.max(1, Math.ceil(bw.mag * (Config.AMMO.BOX_MIN + Math.random() * (1 - Config.AMMO.BOX_MIN))));
       this.list.push({
         kind: 'ammo', w: bw, amount, x: s.x, y: s.y,
+        gold: isGatBox, // 🔫 hộp VÀNG phát sáng riêng
         taken: false, respawnT: 0,
         bob: Math.random() * Math.PI * 2,
       });
@@ -363,32 +370,36 @@ window.Pickups = {
         continue;
       }
 
-      // hào quang dưới đồ
-      const auraCol = pk.kind === 'ammo' ? '102,200,255' : '255,224,102';
-      const g = ctx.createRadialGradient(pk.x, pk.y - 12, 0, pk.x, pk.y - 12, 22);
-      g.addColorStop(0, `rgba(${auraCol},0.30)`);
+      // hào quang dưới đồ — 🔫 hộp đạn Gatling = ÁNH SÁNG VÀNG rực riêng
+      const auraCol = pk.kind === 'ammo'
+        ? (pk.gold ? '255,209,64' : '102,200,255')
+        : '255,224,102';
+      const auraR = pk.gold ? 34 : 22;
+      const g = ctx.createRadialGradient(pk.x, pk.y - 12, 0, pk.x, pk.y - 12, auraR);
+      g.addColorStop(0, `rgba(${auraCol},${pk.gold ? 0.55 : 0.30})`);
       g.addColorStop(1, `rgba(${auraCol},0)`);
       ctx.fillStyle = g;
-      ctx.fillRect(pk.x - 22, pk.y - 34, 44, 44);
+      ctx.fillRect(pk.x - auraR, pk.y - 12 - auraR, auraR * 2, auraR * 2);
 
       if (pk.kind === 'ammo') {
-        /* ── HỘP ĐẠN: thùng vàng đồng, nhãn khẩu + lượng đạn random ── */
+        /* ── HỘP ĐẠN: thùng vàng đồng, nhãn khẩu + lượng đạn random ──
+         * 🔫 hộp GATLING (pk.gold): thùng VÀNG bóng + viền sáng — nhìn xa cũng thấy */
         ctx.save();
         ctx.translate(pk.x, pk.y - 14 + bobY);
-        ctx.fillStyle = '#8a6d3b';          // thùng gỗ/đạn
+        ctx.fillStyle = pk.gold ? '#d4af37' : '#8a6d3b';    // thùng gỗ/đạn
         ctx.fillRect(-12, -8, 24, 16);
-        ctx.strokeStyle = '#5d4a26';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = pk.gold ? '#ffe066' : '#5d4a26';
+        ctx.lineWidth = pk.gold ? 2 : 1.5;
         ctx.strokeRect(-12, -8, 24, 16);
-        ctx.fillStyle = '#ffe066';          // 3 viên đạn trên mặt hộp
+        ctx.fillStyle = pk.gold ? '#fff3b0' : '#ffe066';    // 3 viên đạn trên mặt hộp
         for (let i = -1; i <= 1; i++) {
           ctx.fillRect(i * 6 - 1.5, -5, 3, 9);
         }
         ctx.restore();
         ctx.font = '600 10px Consolas, monospace';
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(102,200,255,0.95)';
-        ctx.fillText('📦 +' + pk.amount + ' ' + pk.w.short, pk.x, pk.y - 30 + bobY);
+        ctx.fillStyle = pk.gold ? 'rgba(255,224,102,1)' : 'rgba(102,200,255,0.95)';
+        ctx.fillText((pk.gold ? '✨📦 +' : '📦 +') + pk.amount + ' ' + pk.w.short, pk.x, pk.y - 30 + bobY);
         ctx.textAlign = 'left';
       } else {
         // khẩu súng lơ lửng (tái dùng hàm vẽ súng của người que)

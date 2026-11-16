@@ -18,8 +18,9 @@ window.Shop = {
   items(p) {
     p = p || Player.obj;
     const list = [];
+    // 🔫 súng ĐỘC QUYỀN chợ (Gatling...) KHÔNG bán ở đây — chỉ ở 🏪 Market
     for (const w of Weapons.list) {
-      if (w.price > 0) {
+      if (w.price > 0 && !w.marketOnly) {
         list.push({
           kind: 'weapon', w,
           name: w.name, price: w.price,
@@ -28,8 +29,19 @@ window.Shop = {
         });
       }
     }
+    // 🔫 ĐẠN GATLING: khẩu độc quyền là đạn GIỚI HẠN — mua lẻ 100 viên/88💰
+    const gat = Weapons.list.find((w) => w.marketOnly);
+    if (gat && p.owned.has(gat.id)) {
+      list.push({
+        kind: 'gatAmmo', w: gat,
+        name: '🔥 Đạn ' + gat.short + ' +' + Config.AMMO.GAT_AMOUNT + ' viên (đạn giới hạn)',
+        price: Config.SHOP.GAT_AMMO_PRICE,
+        afford: p.money >= Config.SHOP.GAT_AMMO_PRICE,
+        owned: false,
+      });
+    }
     list.push({
-      kind: 'refill', name: 'Nạp đầy đạn mọi khẩu (kể cả dự trữ)', price: 50,
+      kind: 'refill', name: 'Nạp đầy đạn MỌI KHẨU THƯỜNG (kể cả dự trữ)', price: 50,
       afford: p.money >= 50, owned: false,
     });
     list.push({
@@ -48,10 +60,20 @@ window.Shop = {
       p.owned.add(item.w.id);
       p.spare[Weapons.list.indexOf(item.w)] = Infinity; // súng MUA = đạn vô hạn (khác súng LỤM)
       showToast('Đã mua ' + item.w.name + '! (phím ' + ((Weapons.list.indexOf(item.w) + 1) % 10) + ')');
+    } else if (item.kind === 'gatAmmo') {
+      // 🔫 nạp 100 viên vào DỰ TRỮ của Gatling (đạn giới hạn — trần dự trữ như súng lụm)
+      const i = Weapons.list.indexOf(item.w);
+      const magSize = (window.GunUp ? GunUp.mag(item.w) : item.w.mag);
+      const cap = magSize * Config.AMMO.SPARE_CAP;
+      if (p.spare[i] !== Infinity) {
+        p.spare[i] = Math.min(cap, p.spare[i] + Config.AMMO.GAT_AMOUNT);
+      }
+      p.money -= item.price;
+      showToast('🔥 +' + Config.AMMO.GAT_AMOUNT + ' đạn ' + item.w.short + ' (dự trữ ' + p.spare[i] + '/' + cap + ')');
     } else if (item.kind === 'refill') {
       p.money -= item.price;
       Weapons.list.forEach((w, i) => {
-        if (!p.owned.has(w.id)) return;
+        if (!p.owned.has(w.id) || w.marketOnly) return; // 🔫 gatling đạn giới hạn — mua riêng 88💰
         const magSize = (window.GunUp ? GunUp.mag(w) : w.mag); // 🔧 băng đã nâng cấp
         p.mags[i] = magSize;
         // súng LỤM (dự trữ hữu hạn) được bồi đủ trần dự trữ luôn

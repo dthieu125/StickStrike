@@ -2,7 +2,7 @@
  * GUNUP — 🔧 NÂNG CẤP SÚNG bằng vàng (lưu vĩnh viễn ss_gunLv)
  * Mỗi khẩu 5 cấp (Config.UPGRADE): mỗi cấp +10% dame · +10% băng · nạp nhanh 5%.
  * Cấp 3 mở ALT-FIRE (bắn phụ) · cấp 5 mở PERK riêng từng khẩu.
- * Mua ở 🏪 MARKET (menu chính) bằng VÀNG TÍCH LUỸ — cấp độ giữ qua các trận.
+ * Mua ở 🏪 CỬA HÀNG (menu chính) bằng VÀNG TÍCH LUỸ — cấp độ giữ qua các trận.
  * Player.fire / startReload / băng đạn... đọc qua GunUp.stats() nên cấp độ
  * áp dụng ngay cho mọi chế độ (wave + deathmatch). Bot KHÔNG được nâng cấp.
  * ========================================================= */

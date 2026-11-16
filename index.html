@@ -48,7 +48,7 @@
             <div id="hintKeys" class="controls-hint">A/D chạy · W nhảy x2 · S ngồi<br>Chuột ngắm bắn · R nạp · G lụm súng</div>
             <div class="menu-tools">
               <h3 class="group-title">🛠️ TIỆN ÍCH</h3>
-              <button id="btnMarket" class="btn">🏪 MARKET<small>mua trang bị bằng vàng tích luỹ</small></button>
+              <button id="btnMarket" class="btn">🏪 CỬA HÀNG<small>mua súng · nâng cấp · trang bị bằng vàng tích luỹ</small></button>
               <button id="btnSettings" class="btn">⚙️ CÀI ĐẶT<small>đường ngắm · màu áo · mũ · phím</small></button>
               <button id="btnTips" class="btn">💡 MẸO CHƠI<small>điều khiển · đạn · mẹo bazoka</small></button>
             </div>
@@ -91,10 +91,10 @@
       </div>
     </div>
 
-    <!-- ═══ 🏪 MARKET — chợ trang bị bằng vàng tích luỹ ═══ -->
+    <!-- ═══ 🏪 CỬA HÀNG (canvas overlay — code ở js/ui/market.js; panel DOM cũ chỉ là dự phòng) ═══ -->
     <div id="market" class="screen hidden">
       <div class="panel market-panel">
-        <h2>🏪 MARKET</h2>
+        <h2>🏪 CỬA HÀNG</h2>
         <p class="stats" id="marketWallet">💰 Vàng của bạn: 0</p>
         <p class="market-note">Vàng kiếm được từ chế độ <b>SINH TỔN</b> (giết quái + thưởng dọn wave) được
         tích luỹ vĩnh viễn — chết không mất, thoát game không mất. Trang bị vĩnh viễn trừ khiên (xài 1 lần).</p>
@@ -227,7 +227,7 @@
             <b>Sniper</b> (wave 5+): tia đỏ ngắm 0.7s rồi bắn 25 dmg — thấy tia đỏ là né!</p>
           </div>
           <div class="tip-block">
-            <h3>🏪 Market — vàng tích luỹ</h3>
+            <h3>🏪 Cửa hàng — vàng tích luỹ</h3>
             <p>Vàng kiếm ở Sinh tồn được <b>lưu vĩnh viễn</b>. Mua ở menu chính:
             <b>giáp −15%</b> đòn nhận (600💰), <b>nón</b> chống headshot ×2→×1.3 (450💰),
             <b>giày +12%</b> tốc chạy (300💰), <b>bao tay</b> nạp nhanh 30% (300💰),
@@ -235,7 +235,7 @@
           </div>
           <div class="tip-block">
             <h3>🔧 Nâng cấp súng + ⓶ Bắn phụ (alt-fire)</h3>
-            <p>Mỗi khẩu súng <b>nâng cấp 10 cấp</b> ở Market: mỗi cấp <b>+5% dame · +5% băng ·
+            <p>Mỗi khẩu súng <b>nâng cấp 10 cấp</b> ở Cửa hàng: mỗi cấp <b>+5% dame · +5% băng ·
             nạp nhanh 2.5%</b> (max = +50% dame). <b>Cấp 3 mở BẮN PHỤ</b>: bấm <b>chuột phải / E</b> — mỗi khẩu một kiểu
             (liên thanh, đạn xuyên, xịt quạt, slug, bộ ba, nổ giữa đường, cầu nảy tường...
             <b>minigun là GIỮ</b> để quay nòng cho đạn tập trung). <b>Cấp 6 mở PERK</b> riêng:

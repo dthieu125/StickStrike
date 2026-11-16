@@ -647,6 +647,24 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **121/121 test logic PASS ×3 lần chạy** (4 test mới: shop grid/MUA/quote ông già ×2,
   hitstop giới hạn, audio/tracers/camera/chữ damage throttle)
 
+### 🔧🎨 GĐ 23b — sửa 3 góp ý playtest: tâm quay · ông già đọc kịp · MARKET = CỬA HÀNG
+
+- [x] **🎯 Quay đúng TÂM ITEM**: súng vẽ 1 lần vào canvas ẨN (sprite cache per khẩu)
+  rồi xoay TẤM ẢNH quanh tâm nó — hết cảnh quay lệch quanh điểm xa trông "không phù hợp";
+  không còn nhảy mirror khi quay sang nửa trái (sprite bake góc 0 không lật)
+- [x] **⏱️ Ông già nói đỡ liên tục**: tìm ra bug — nhánh idle đổi quote mà KHÔNG reset
+  timer → ông già nhể câu mới MỖI FRAME, không kịp đọc. Tách bộ máy chung `window.Keeper`:
+  vui/cau có/buồn giữ 4s → về idle; idle giữ 8-12s mới đổi câu (cả 2 cửa hàng cùng dùng)
+- [x] **🏪 MARKET → CỬA HÀNG canvas**: viết lại Market từ panel DOM thành overlay CANVAS
+  GIỐNG HẾT cửa hàng giữa wave — GRID ô vuông + khung phóng lớn món quay quanh tâm +
+  chi tiết tác dụng + TRẠNG THÁI + nút MUA + ông già chủ tiệm (bộ máy Keeper dùng chung);
+  3 TAB: 🔫 SÚNG ĐỘC QUYỀN (Gatling) · 🔧 NÂNG CẤP SÚNG (11 khẩu × 10 cấp) ·
+  🪖 TRANG BỊ (giáp/nón/giày/bao tay/khiên); bấm tab/ô/mua = canvas click; ESC/‹ VỀ MENU
+  thoát; đổi tên mọi chỗ user thấy: nút menu "🏪 CỬA HÀNG", panel DOM (dự phòng),
+  ô thanh súng "🏪 C.Hàng", help trong game
+- [x] **123/123 test logic PASS ×3 lần chạy** (2 test mới: Keeper có giờ nghỉ không đổi
+  quote mỗi frame + CỬA HÀNG canvas 3 tab/MUA trừ vàng/ông già cau có khi thiếu vàng)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -697,7 +715,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-23 (chống lag + cửa hàng grid ông già chủ tiệm) — 121/121 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-23 (chống lag + cửa hàng grid ông già + CỬA HÀNG canvas thay MARKET) — 123/123 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

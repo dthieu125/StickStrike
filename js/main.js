@@ -315,6 +315,11 @@
     if (fps > 0) fps += (1 / Math.max(rawDt, 0.0001) - fps) * 0.05;
 
     if (mode === 'menu') {
+      // 🏪 CỬA HÀNG (canvas) — bấm chuột/tap + ESC đóng tiệm
+      if (window.Market && Market.open) {
+        if (Input.wasPressed('pause')) Market.hide();
+        else if (Input.mouse.pressed) Market.handleClick(Input.mouse.x, Input.mouse.y);
+      }
       // camera trôi chậm nhìn quanh map làm nền menu
       Camera.x = (Math.sin(time * 0.1) * 0.5 + 0.5) * Math.max(0, Level.pxW - viewW);
       Camera.y = Math.max(0, Math.min(Level.pxH - viewH, Camera.y));
@@ -533,6 +538,11 @@
       drawVignette();
       drawFog(); // 🎲 sương mù che ngoài tầm nhìn (vẽ cuối để phủ lên hết)
       updateWeaponBar();
+    }
+
+    // 🏪 CỬA HÀNG (trước là MARKET) — vẽ ĐÈ lên nền menu khi mở từ menu chính
+    if (mode === 'menu' && window.Market && Market.open) {
+      Market.updateAndDraw(ctx, Input.mouse);
     }
   }
 
@@ -848,7 +858,7 @@
           '<span class="ammo">' + ammoText + '</span>';
       } else if (mode === 'wave') {
         d.innerHTML = '<span class="num">' + num + '</span>' +
-          '<span class="nm">🔒</span><span class="ammo">' + (w.marketOnly ? '🏪 chợ' : w.price + '💰') + '</span>';
+          '<span class="nm">🔒</span><span class="ammo">' + (w.marketOnly ? '🏪 C.Hàng' : w.price + '💰') + '</span>';
       } else {
         d.innerHTML = '<span class="num">' + num + '</span>' +
           '<span class="nm">🔒</span><span class="ammo">lụm trên map</span>';

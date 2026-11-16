@@ -12,6 +12,40 @@
  * 🤝 co-op: rows[] giữ nguyên cơ chế — guest bấm ô = XEM, bấm MUA = gửi
  * tin nhắn {t:'buy'} sang host (host mua hộ vào túi người 2).
  * ========================================================= */
+/* ═══ 👴 KEEPER — bộ máy ông già chủ tiệm DÙNG CHUNG cho cả 2 cửa hàng ═══
+ * (CỬA HÀNG giữa wave = Shop · CỬA HÀNG ngoài menu = Market — cùng 1 ông già!)
+ * GĐ 23b fix: trước đây nhánh idle đổi quote mà KHÔNG reset timer → ông già
+ * nhể câu mới MỖI FRAME → chữ hiện ra liên tục không kịp đọc. Giờ mọi nhánh
+ * đều có giờ nghỉ riêng: vui/câu có 4s · idle 8-12s đổi câu chậm rãi. */
+window.Keeper = {
+  new(mood) {
+    return {
+      mood,
+      quote: this.pick(mood),
+      timer: mood === 'idle' ? 8 + Math.random() * 4 : 4, // giây giữ câu này
+      _last: 0,
+    };
+  },
+
+  pick(mood) {
+    const L = Shop.QUOTES[mood] || Shop.QUOTES.idle;
+    return L[Math.floor(Math.random() * L.length)];
+  },
+
+  /* gọi mỗi frame khi cửa hàng đang mở — trôi thời gian + đổi tâm trạng/câu */
+  step(host, now) {
+    const k = host.keeper;
+    if (!k) return;
+    if (!k._last) k._last = now;
+    const dt = Math.min(0.1, now - k._last);
+    k._last = now;
+    k.timer -= dt;
+    if (k.timer > 0) return;
+    if (k.mood !== 'idle') host.keeper = this.new('idle'); // vui/cau có 4s → về bình thường
+    else { k.quote = this.pick('idle'); k.timer = 8 + Math.random() * 4; } // idle: đổi câu + NGHỈ ĐỦ LÂU
+  },
+};
+
 window.Shop = {
   open: false,
   rows: [],        // vùng bấm [{x,y,w,h,action}] — action: món hàng / 'buy' / 'close'
@@ -59,10 +93,11 @@ window.Shop = {
     return L[Math.floor(Math.random() * L.length)];
   },
 
-  /* đổi tâm trạng ông già + 1 câu nói tương ứng */
+  /* đổi tâm trạng ông già + 1 câu nói tương ứng (Keeper dùng chung với Market) */
+  pick(mood) { return Keeper.pick(mood); },
+
   _mood(mood) {
-    const timer = mood === 'idle' ? 6 + Math.random() * 4 : 4;
-    this.keeper = { mood, quote: this.pick(mood), timer, _last: 0 };
+    this.keeper = Keeper.new(mood);
   },
 
   setOpen(v) {
@@ -90,7 +125,7 @@ window.Shop = {
   items(p) {
     p = p || Player.obj;
     const list = [];
-    // 🔫 súng ĐỘC QUYỀN chợ (Gatling...) KHÔNG bán ở đây — chỉ ở 🏪 Market
+    // 🔫 súng ĐỘC QUYỀN chợ (Gatling...) KHÔNG bán ở đây — chỉ ở 🏪 CỬA HÀNG (menu chính)
     for (const w of Weapons.list) {
       if (w.price > 0 && !w.marketOnly) {
         list.push({
@@ -177,19 +212,48 @@ window.Shop = {
   },
 
   /* vẽ icon món hàng quay quanh điểm (cx,cy) — dùng cho ô grid (góc nghiêng tĩnh)
+   * và khung phóng lớn (quay tròn theo thời gian).
+   * 🎯 GĐ 23b fix: súng vẽ 1 lần vào canvas ẨN (sprite) rồi xoay TẤM ẢNH quanh
+   * tâm nó — quay đúng TÂM ITEM như bạn yêu cầu, không còn lệch quanh điểm xa. */
+  _gunCache: {},
+  _gunSprite(w) {
+    if (this._gunCache[w.id]) return this._gunCache[w.id];
+    let spr = null;
+    try {
+      if (typeof _drawGun === 'function' && document.createElement) {
+        const len = (w.bodyLen || 12) + (w.barrelLen || 14);
+        const H = Config.PLAYER.H || 52;
+        const pad = 12, hgt = 48;
+        const c = document.createElement('canvas');
+        c.width = Math.ceil(len + pad * 2 + H * 0.08);
+        c.height = hgt;
+        const g = c.getContext('2d');
+        _drawGun(g, w, pad, hgt / 2, 0, 0, H); // vẽ ngang 1 lần — tâm thật = giữa canvas
+        spr = { c, w: c.width, h: c.height };
+      }
+    } catch (e) { spr = null; } // harness không có canvas → fallback bên dưới
+    this._gunCache[w.id] = spr;
+    return spr;
+  },
+
+  /* vẽ icon món hàng quay quanh điểm (cx,cy) — dùng cho ô grid (góc nghiêng tĩnh)
    * và khung phóng lớn (quay tròn theo thời gian) */
   _drawItem(ctx, item, cx, cy, angle, scale) {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
     if (item.kind === 'weapon') {
-      const w = item.w;
-      if (typeof _drawGun === 'function') {
-        // súng vẽ từ gốc 0 → dài bodyLen+barrel: dịch nửa chiều dài để QUAY ĐỀU quanh tâm
+      const spr = this._gunSprite(item.w);
+      if (spr) {
+        ctx.rotate(angle);
+        ctx.drawImage(spr.c, -spr.w / 2, -spr.h / 2); // xoay quanh TÂM tấm ảnh = tâm khẩu súng
+      } else if (typeof _drawGun === 'function') {
+        // fallback: xoay quanh nửa chiều dài khẩu (chưa có canvas ẩn)
+        const w = item.w;
         const len = (w.bodyLen || 12) + (w.barrelLen || 14);
-        _drawGun(ctx, w, -len / 2, 0, angle, 0, Config.PLAYER.H || 52);
+        _drawGun(ctx, w, -(len / 2 + (Config.PLAYER.H || 52) * 0.08), -2, angle, 0, Config.PLAYER.H || 52);
       } else {
-        // phòng hộ: harness không có hàm vẽ súng → hình chữ nhật đại diện
+        // phòng hộ: harness không có gì cả → hình chữ nhật đại diện
         ctx.fillStyle = '#aab4c5';
         ctx.fillRect(-16, -3, 32, 6);
         ctx.fillStyle = '#6b7280';
@@ -399,20 +463,10 @@ window.Shop = {
     }
 
     /* ── ÔNG GIÀ CHỦ TIỆM + bong bóng lời thoại ── */
-    const k = this.keeper;
-    if (k) {
-      // đếm dt riêng (updateAndDraw không nhận dt) — để đổi quote + chớp mắt
-      if (!k._last) k._last = now;
-      const kdt = Math.min(0.1, now - k._last);
-      k._last = now;
-      k.timer -= kdt;
-      if (k.timer <= 0 && k.mood !== 'idle') this._mood('idle');
-      else if (k.timer <= 0) k.quote = this.pick('idle');
-      this._drawKeeper(ctx, x0 + 74, y0 + H - 14, now, k.mood);
-      this._drawBubble(ctx, x0 + 132, y0 + H - 118, k.quote, k.mood);
-    } else {
-      this._mood('idle');
-    }
+    if (!this.keeper) this._mood('idle');
+    Keeper.step(this, now); // trôi giờ + đổi câu CÓ NGHỈ (không nhể chữ mỗi frame nữa)
+    this._drawKeeper(ctx, x0 + 74, y0 + H - 14, now, this.keeper.mood);
+    this._drawBubble(ctx, x0 + 132, y0 + H - 118, this.keeper.quote, this.keeper.mood);
 
     /* ── nút ra trận + đồng hồ (🏪 tiệm nghỉ: đồng hồ ĐÓNG BĂNG) ── */
     const btn = { x: x0 + W - 264, y: y0 + H - 52, w: 240, h: 36 };

@@ -8,6 +8,15 @@
 window.Bullets = {
   projectiles: [],
   tracers: [],
+  /* 🚦 CHỐNG LAG GĐ 23: súng liên thanh push vệt đạn 36 lần/s — nẹp số lượng,
+   * quá trần thì xả vệt CŨ NHẤT (vệt đạn sống có 0.07s nên mắt không thấy mất gì) */
+  TRACER_MAX: 150,
+  _pushTracer(t) {
+    this.tracers.push(t);
+    if (this.tracers.length > this.TRACER_MAX) {
+      this.tracers.splice(0, this.tracers.length - this.TRACER_MAX);
+    }
+  },
   _rayId: 0,
 
   /* Bắn 1 tia. Trả về { dmg, head, kill, x, y } */
@@ -72,7 +81,7 @@ window.Bullets = {
     }
 
     // vệt đạn: nếu tia xuyên mép map thì vẽ 2 đoạn rời nhau (không kẻ ngang cả map)
-    const tracer = (x1, y1, x2, y2) => this.tracers.push({
+    const tracer = (x1, y1, x2, y2) => this._pushTracer({
       x1, y1, x2, y2,
       life: w.tracerLife || 0.07, maxLife: w.tracerLife || 0.07,
       color: w.tracerColor || '#ffe9a8', width: w.tracerWidth || 1.8,

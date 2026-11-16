@@ -114,7 +114,7 @@ window.Monsters = {
         if (m.type === 'boss' && !m.boomed) {
           m.boomed = true;
           Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 24, '#ffe066');
-          Particles.text(m.x + m.w / 2, m.y - 30, 'BOSS GỤC!', '#ffe066', 22);
+          Particles.text(m.x + m.w / 2, m.y - 30, 'BOSS GỤC!', '#ffe066', 22, true);
           AudioFX._tone(500, 120, 0.6, 'sawtooth', 0.16);
           window.showToast && showToast('👑 BOSS GỤC! Vàng lớn + 2/3 lựa chọn HIẾM đang chờ!');
         }
@@ -122,7 +122,7 @@ window.Monsters = {
         if (m.type === 'elite_mini' && !m.boomed) {
           m.boomed = true;
           Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 16, '#f0abfc');
-          Particles.text(m.x + m.w / 2, m.y - 26, 'BOSS NHỎ GỤC!', '#f0abfc', 18);
+          Particles.text(m.x + m.w / 2, m.y - 26, 'BOSS NHỎ GỤC!', '#f0abfc', 18, true);
           AudioFX._tone(420, 100, 0.45, 'sawtooth', 0.14);
         }
         m.deadT = (m.deadT || 0) + dt;
@@ -155,7 +155,7 @@ window.Monsters = {
           m.stunT = B.STUN;                 // choáng đứng im — phần thưởng cho người bắn khỏe
           m.volleyCd = B.TELEGRAPH; m.summonCd = 1.5;
           m.flash = 0.5;                    // nháy trắng báo đổi phase
-          Particles.text(m.x + m.w / 2, m.y - 26, '⚠️ PHASE ' + want + '!', '#ff5a5a', 18);
+          Particles.text(m.x + m.w / 2, m.y - 26, '⚠️ PHASE ' + want + '!', '#ff5a5a', 18, true);
           Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 14, '#ff5a5a');
           AudioFX._tone(180, 90, 0.4, 'sawtooth', 0.14);
           window.showToast && showToast(want === 2 ? '👑 BOSS GỌI QUÂN! Điểm yếu dời xuống NGỰC'
@@ -170,7 +170,7 @@ window.Monsters = {
           m.enraged = true;
           m.leapCd = 1.2;                     // cuồng xong nhảy sớm — đừng đứng gần!
           m.flash = 0.5;                      // nháy trắng báo chuyển trạng thái
-          Particles.text(m.x + m.w / 2, m.y - 26, '⚠️ CUỒNG NỘ!', '#ff2b5e', 17);
+          Particles.text(m.x + m.w / 2, m.y - 26, '⚠️ CUỒNG NỘ!', '#ff2b5e', 17, true);
           Particles.sparks(m.x + m.w / 2, m.y + m.h / 2, 0, 14, '#ff2b5e');
           AudioFX._tone(160, 100, 0.4, 'sawtooth', 0.14);
           window.showToast && showToast('👹 BOSS NHỎ CUỒNG NỘ! Nhảy đè — né nhanh!');

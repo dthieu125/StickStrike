@@ -36,6 +36,17 @@ window.AudioFX = {
     this.master.gain.value = this.muted ? 0 : 0.5;
   },
 
+  /* 🚦 CHỐNG LAG GĐ 23: súng liên thanh 36 phát/s = ~100 node WebAudio/giây →
+   * trình duyệt dọn rác đặc → game khựng, hình nhiễu. Giải pháp: mỗi "loại tiếng"
+   * chỉ cho phát lại sau gapMs — tai người không nghe ra khác biệt gì. */
+  _throttle: {},
+  canPlay(key, gapMs) {
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (this._throttle[key] && now - this._throttle[key] < gapMs) return false;
+    this._throttle[key] = now;
+    return true;
+  },
+
   /* hơi nhiễu trắng qua filter — dùng cho tiếng giật/nổ */
   _noise(dur, freq, filterType, gain, delay) {
     if (!this.ctx || this.muted) return;
@@ -70,6 +81,7 @@ window.AudioFX = {
 
   // công thức tiếng theo từng loại súng (pitch xê dịch chút cho đỡ lặp)
   shot(kind) {
+    if (!this.canPlay('shot:' + kind, kind === 'minigun' ? 50 : 28)) return; // 🚦 tiếng súng máy dồn lại
     const v = 0.94 + Math.random() * 0.12; // biến thể cao độ ngẫu nhiên
     switch (kind) {
       case 'pistol':
@@ -127,6 +139,7 @@ window.AudioFX = {
   },
 
   hit(head) {
+    if (!this.canPlay('hit', 30)) return; // 🚦 trúng đạn liên tục 36/s → dồn còn ~33 tiếng/s là đủ
     if (head) this._tone(620, 210, 0.08, 'square', 0.14);
     else this._tone(330, 130, 0.06, 'square', 0.1);
     this._noise(0.045, 2600, 'highpass', 0.09);

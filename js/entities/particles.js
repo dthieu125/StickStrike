@@ -49,9 +49,18 @@ window.Particles = {
     });
   },
 
-  text(x, y, str, color, size) {
+  text(x, y, str, color, size, force) {
+    /* 🚦 CHỐNG LAG GĐ 23: súng liên thanh 36 phát/s = 36 chữ số damage/giây chồng lên
+     * nhau → màn hình nhiễu loá. Chỉ cho vẽ chữ mới cách chữ trước ≥30ms
+     * (gọi với force=true nếu là chữ QUAN TRỌNG không được bỏ: boss, cứu đồng đội...) */
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (!force && now - this._textCd < this.TEXT_GAP) return;
+    this._textCd = now;
     this.add({ type: 'text', x, y, vx: 0, vy: -55, life: 0.8, size: size || 13, color, str, gravity: -25 });
   },
+
+  _textCd: 0,
+  TEXT_GAP: 30, // ms giữa 2 chữ vẽ được
 
   /* vụ nổ: chớp sáng + vòng xung kích + lửa + khói */
   explosion(x, y, r) {

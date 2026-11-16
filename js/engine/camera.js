@@ -28,8 +28,10 @@ window.Camera = {
   },
 
   // Gọi để thêm rung (giai đoạn 2: súng lớn, nổ...)
+  // 🚦 GĐ 23: trần 20 → 10 — súng liên thanh cộng dồn 36 phát/s làm rung max liên tục
+  // (hình "nhiễu" loá mắt); nẹp 10 thì nổ lớn vẫn rung đã tay mà nhìn còn rõ đường.
   addShake(v) {
-    this.shake = Math.min(20, this.shake + v);
+    this.shake = Math.min(10, this.shake + v);
   },
 
   // Dịch canvas về toạ độ camera (+ độ rung ngẫu nhiên)

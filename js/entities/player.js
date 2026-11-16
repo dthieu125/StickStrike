@@ -202,7 +202,7 @@ window.Player = {
     d.iframe = 1.2; // bất tử 1.2s vừa sống lại — tránh chết dây chuyền
     d.reviveT = 0;
     Particles.poof(d.x + d.w / 2, d.y + d.h / 2);
-    Particles.text(d.x + d.w / 2, d.y - 10, '🤝 ĐÃ CỨU!', '#7ef27a', 15);
+    Particles.text(d.x + d.w / 2, d.y - 10, '🤝 ĐÃ CỨU!', '#7ef27a', 15, true);
     AudioFX._tone(300, 600, 0.25, 'triangle', 0.14);
     window.showToast && showToast('🤝 ' + (d.idx === 0 ? 'Người 1' : 'Người 2') + ' đã được cứu — chiến tiếp!');
   },
@@ -458,8 +458,11 @@ window.Player = {
     p.muzzle.x = m.x; p.muzzle.y = m.y;
 
     AudioFX.shot(w.sound);
-    // 🌐 co-op: báo máy guest phát TIẾNG BẮN (máy host tự nghe rồi)
-    if (window.Net && Net.mode === 'host') Net.fx({ k: 'shot', w: w.sound });
+    // 🌐 co-op: báo máy guest phát TIẾNG BẮN (máy host tự nghe rồi) — 🚦 throttle
+    // 60ms/lần để súng liên thanh không dội 36 tin nhắn/giây vào máy bạn
+    if (window.Net && Net.mode === 'host' && AudioFX.canPlay('netshot', 60)) {
+      Net.fx({ k: 'shot', w: w.sound });
+    }
     Camera.addShake(w.shake);
 
     if (w2.kind === 'proj') {

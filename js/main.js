@@ -204,7 +204,8 @@
       else if (inp.wasPressed('slot1')) Net.send({ t: 'offer', i: 1 });
       else if (inp.wasPressed('slot2')) Net.send({ t: 'offer', i: 2 });
     }
-    // 🏪 tiệm: phím B + CLICK món hàng (nuốt click → gửi yêu cầu MUA sang host)
+    // 🏪 tiệm: phím B + CLICK (nuốt click → gửi yêu cầu MUA sang host)
+    // 🎨 GĐ 23: bấm Ô grid = CHỌN XEM (đổi sel, không gửi gì); bấm nút MUA = gửi {t:'buy'}
     if (Wave.state === 'intermission') {
       if (inp.wasPressed('buy')) Net.send({ t: 'shop' });
       if (Shop.open && inp.mouse.pressed) {
@@ -212,8 +213,12 @@
           inp.mouse.x >= r.x && inp.mouse.x <= r.x + r.w && inp.mouse.y >= r.y && inp.mouse.y <= r.y + r.h);
         if (hit) {
           if (hit.action === 'close') Net.send({ t: 'shop' });
-          else if (typeof hit.action === 'object') {
-            Net.send({ t: 'buy', kind: hit.action.kind, w: hit.action.kind === 'weapon' ? hit.action.w.id : null });
+          else if (hit.action === 'buy' && Shop.sel) {
+            const it = Shop.sel;
+            Net.send({ t: 'buy', kind: it.kind, w: it.kind === 'weapon' ? it.w.id : null });
+          } else if (typeof hit.action === 'object') {
+            Shop.sel = hit.action; // xem trước món ở khung phóng lớn — MUA rồi mới gửi
+            AudioFX.click();
           }
         }
       }

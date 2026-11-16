@@ -619,6 +619,34 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **Co-op mạng**: máy guest gửi tin nhắn `guns` → host mở khoá GIỮ HỘ với đúng đạn giới hạn
 - [x] **117/117 test logic PASS ×3 lần chạy** (5 test Gatling mới)
 
+### 🚦🎨 GĐ 23 — CHỐNG LAG SÚNG LIÊN THANH + CỬA HÀNG GRID ÔNG GIÀ CHỦ TIỆM (theo playtest)
+
+- [x] **🚦 Hitstop GIỚI HẠN 1 lần/0.18s** (`Time.hitstopCd`): gatling 36 phát/s × 28% trúng đầu
+  → hitstop liên tục → thời gian chảy 6% VĨNH VIỄN = game như ĐÓNG BĂNG, "súng tự bắn
+  không điều khiển được" — đúng triệu chứng bạn báo; giờ headshot liên tục chỉ khựng nhịp nhàng
+- [x] **🚦 Audio throttle**: mỗi loại tiếng chỉ phát lại sau 28ms (súng máy 50ms) — hết
+  ~100 node WebAudio/giây gây lag dồn dập; tiếng trúng đạn throttle 30ms; co-op tin nhắn
+  tiếng bắn throttle 60ms
+- [x] **🚦 Trần đồ hiệu ứng**: vệt đạn `tracers` nẹp 150 (xả vệt cũ nhất); rung camera
+  trần 20 → 10 (hết cảnh hình "nhiễu" loá mắt); chữ số damage chỉ vẽ 1 chữ/30ms
+  (chữ QUAN TRỌNG — boss phase, cứu đồng đội — có `force=true` không bị bỏ)
+- [x] **🎨 Cửa hàng GRID**: mỗi món 1 ô vuông (4 cột, icon súng/thùng đạn/thốc + tên + giá) —
+  hết choáng không gian kiểu 1 dòng/món; bấm ô = CHỌN XEM (không mua luôn)
+- [x] **🎨 Khung phóng lớn**: món được chọn QUAY CHẦM CHẦM quanh điểm cố định (nhìn mọi
+  góc, có bóng đổ sân khấu); bên dưới = tên + GIÁ + chi tiết tác dụng từng dòng +
+  TRẠNG THÁI (✅ ĐÃ TRANG BỊ / ❌ CHƯA TRANG BỊ / 🧪 TIÊU HAO + dự trữ Gatling) + nút 🛒 MUA
+- [x] **🎨 Ông GIÀ chủ tiệm**: vẽ canvas — nón lá + râu trắng + gậy gỗ + áo choàng cong lưng,
+  5 tâm trạng (idle/happy/angry/sad/encourage) đổi lông mày + miệng + hiệu ứng (💢✨💧);
+  bong bóng thoại xoay bộ quote: "Khách quan ơi cần mua gì?", "Bổn tiệm có rất nhiều đồ
+  quý giá, sịn xò con bò!", MUA → cười "Quý khách thật có con mắt tinh tường!", nghèo →
+  cau có "Nghèo mà bày đặt vào tiệm mua đồ!", ế → "Sáng giờ chưa ai mở hàng! Chán ghê!",
+  ra về không mua → động viên "Ráng cày đi rùi quay lại ủng hộ bổn tiệm nhé!" (nhớ mặt,
+  lần mở sau thể hiện)
+- [x] **🤝 co-op giữ nguyên cơ chế mua**: guest bấm ô = xem, bấm MUA = gửi `{t:'buy'}`
+  sang host (host tìm lại món MỚI NHẤT theo kind/w rồi mua hộ vào túi người 2)
+- [x] **121/121 test logic PASS ×3 lần chạy** (4 test mới: shop grid/MUA/quote ông già ×2,
+  hitstop giới hạn, audio/tracers/camera/chữ damage throttle)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -669,7 +697,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-22 (mobile + GATLING khẩu độc quyền chợ) — 117/117 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-23 (chống lag + cửa hàng grid ông già chủ tiệm) — 121/121 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

@@ -192,4 +192,66 @@ window.Maps = {
       B: [[1824, 652], [1740, 652], [1360, 492], [1020, 588], [1220, 652]],
     },
   },
+
+  /* ── ĐẤU TRƯỜNG COLOSSEUM (deathmatch · map CHÍNH của chế độ 1 vs NHIỀU) ──
+     RỘNG GẤP ĐÔI map thường (120 cột = 3840px): sàn LIỀN MẠCH không hố,
+     dàn chướng ngại dày — container 3-5 ô, trụ đá, thùng hàng rải khắp
+     3 vùng (trái / giữa / phải) + giàn giáo một-chiều vòng quanh map
+     (leo bằng container, nhảy qua khe). Đội B spawn DÃI khắp map nên
+     bot không dồn về 1 góc — một mình bạn phải luồn lách trong đám đông. */
+  colosseum: {
+    id: 'colosseum', name: '🏟️ Đấu Trường Colosseum', mode: 'dm',
+    build: () => buildMap(120, 24, (m) => {
+      m.solid(0, 22, 120, 2);                   // sàn LIỀN MẠCH toàn map — KHÔNG hố rơi xuyên
+      /* ── vùng TRÁI (cột 5-30) ── */
+      m.solid(6, 21, 2, 1);                     // bậc 1 ô
+      m.solid(9, 19, 4, 3);                     // container 3 ô
+      m.solid(14, 20, 3, 2);                    // bậc 2 ô lên container cao
+      m.solid(18, 17, 5, 5);                    // container cao 5 ô (bắn khống chế trái)
+      m.solid(24, 20, 4, 2);                    // thùng 2 ô giữa vùng
+      m.solid(28, 21, 2, 1);                    // bậc 1 ô
+      /* ── vùng GIỮA (cột 50-72) ── */
+      m.solid(51, 21, 2, 1);                    // bậc 1 ô
+      m.solid(54, 19, 4, 3);                    // khối 3 ô
+      m.solid(60, 17, 3, 5);                    // trụ đá giữa 5 ô (lấp lóng giữa map)
+      m.solid(64, 20, 3, 2);                    // bậc 2 ô
+      m.solid(68, 18, 4, 4);                    // khối 4 ô
+      /* ── vùng PHẢI (cột 88-114) ── */
+      m.solid(89, 21, 2, 1);                    // bậc 1 ô
+      m.solid(92, 20, 4, 2);                    // thùng 2 ô
+      m.solid(97, 17, 5, 5);                    // container cao 5 ô
+      m.solid(103, 20, 3, 2);                   // bậc 2 ô
+      m.solid(107, 19, 4, 3);                   // container 3 ô
+      m.solid(112, 21, 2, 1);                   // bậc 1 ô
+      /* ── giàn giáo MỘT CHIỀU vòng quanh map (nhảy từ dưới lên, rơi tự do xuống) ──
+       * leo lên: bậc → container 3-5 ô (đỉnh hàng 17) → giàn giáo hàng 13
+       * (chênh 4 ô = tầm NHẢY ĐÔI) — các đoạn cách nhau khe 3-4 ô để rơi xuống chạy */
+      m.grate(10, 13, 14);                      // giàn trái
+      m.grate(27, 13, 10);                      // giàn trái-đến-giữa
+      m.grate(40, 13, 12);                      // giàn giữa-trái
+      m.grate(55, 13, 12);                      // giàn giữa (bám trụ đá)
+      m.grate(70, 13, 12);                      // giàn giữa-phải
+      m.grate(85, 13, 10);                      // giàn phải-đến-giữa
+      m.grate(98, 13, 14);                      // giàn phải
+      /* ── hành lang cao 2 MÉP (row 8) — đứng đầu xem toàn map ── */
+      m.solid(0, 8, 12, 1);                     // hành lang cao trái
+      m.solid(108, 8, 12, 1);                   // hành lang cao phải
+      m.grate(14, 10, 6);                       // bậc trung gian lên hành lang trái
+      m.grate(100, 10, 6);                      // bậc trung gian lên hành lang phải
+    }),
+    spawns: {
+      /* đội A (bạn) — góc TRÁI · đội B (bot đỏ) spawn DÃI khắp map 3840px */
+      A: [[96, 652], [220, 652], [160, 416]],
+      B: [[3680, 652], [3760, 652], [3560, 652], [3260, 652], [2960, 652],
+          [2600, 652], [2180, 652], [1620, 652], [1160, 652], [880, 652]],
+    },
+    /* ☠️ HAZARD: ống ga ở các khoảng trống + cặp cột điện phóng tia NGANG giữa map
+     * (né chướng ngại — cột 60-71 có trụ/khối, né giàn giáo hàng 13/10) */
+    hazards: [
+      { kind: 'gas', c: 15 },
+      { kind: 'gas', c: 46 },
+      { kind: 'gas', c: 104 },
+      { kind: 'zap', c: 74, c2: 82 },
+    ],
+  },
 };

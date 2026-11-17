@@ -235,6 +235,17 @@ window.Bots = {
       /* ── 4. Vật lý + animate ── */
       b.vy = Math.min(b.vy + Config.GRAVITY * dt, Config.MAX_FALL);
       Physics.moveAndCollide(b, Level, dt);
+
+      /* 🕳️ GĐ 24 fix: bot rơi XUYÊN map (hố) → GỤC thay vì bắn tủm mọe dưới đáy
+       * mà không ai thấy. Đội địch +1 (không có "xạ thủ" — như người gục ở Match.update),
+       * bot tự hồi sinh theo respawnT như thường. */
+      if (b.y > Level.pxH + 80) {
+        b.dead = true;
+        b.respawnT = Config.DM.RESPAWN;
+        Particles.poof(b.x + b.w / 2, Level.pxH - 20);
+        Match.onKill(b.team === 'A' ? 'B' : 'A');
+        continue;
+      }
       if (b.onGround) b.airJumps = Config.PLAYER.MAX_JUMPS - 1; // chạm đất → được nhảy thêm 1 lần nữa
       if (b.onGround && Math.abs(b.vx) > 15) b.runPhase += Math.abs(b.vx) * dt * 0.055;
       else b.runPhase = 0;

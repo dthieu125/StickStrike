@@ -52,6 +52,7 @@
       AudioFX.ensure();
       mode = 'dm'; paused = false;
       this._netDMMap = null; // chơi đơn — ĐẤU LẠI sẽ về DM thường
+      this._soloMode = false; // không phải 1 vs NHIỀU — ĐẤU LẠI về ĐẤU ĐỘI thường
       mapDef = Maps[mapId];
       _setupLevel(mapDef);
       // bạn đứng vào đội hình đội A (điểm spawn đầu tiên của đội)
@@ -66,6 +67,27 @@
       AudioFX.startMusic();
       showToast('🤖 Đội ' + Config.DM.WIN_KILLS + ' kill thắng — Lụm súng rải trên map bằng phím G!');
     },
+    /* 🎯 1 vs NHIỀU — MỘT mình bạn vs cả đội bot đỏ trên map ĐẤU TRƯỜNG RỘNG:
+     * map rộng GẤP ĐÔI + chướng ngại dày (thêm Props — thùng nổ/thùng gỗ/ống ga) */
+    startSolo() {
+      AudioFX.ensure();
+      mode = 'dm'; paused = false;
+      this._netDMMap = null; // chơi đơn — ĐẤU LẠI dựng lại trận solo này
+      this._soloMode = true; // ĐẤU LẠI = 1 vs NHIỀU lại (menu.js đọc cờ này)
+      mapDef = Maps.colosseum;
+      _setupLevel(mapDef);
+      const sp = mapDef.spawns.A[0]; // góc trái — bot đỏ spawn DÃI khắp map rộng
+      Player.create({ x: sp[0], y: sp[1] - 52 }, 'A', ['pistol']);
+      Pickups.spawnForMap(mapDef);   // súng rải map — lụm bằng G
+      Trees.spawnForMap(mapDef);     // (colosseum không cây — không sao)
+      if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện
+      Props.spawnForMap(mapDef);     // 🛢️ THÊM chướng ngại phá được — "nhiều chướng ngại hơn"
+      Match.start(mapDef, undefined, true); // solo: đội A chỉ có bạn · đội B = SOLO.ENEMIES bot
+      Menu.hideAll();
+      AudioFX.startMusic();
+      showToast('🎯 MỘT MÌNH bạn vs ' + Config.SOLO.ENEMIES + ' bot đỏ — Đấu Trường rộng, chúc may mắn! ' +
+        Config.DM.WIN_KILLS + ' kill thắng · lụm súng bằng phím G');
+    },
     /* ⚔️ ĐỐI ĐẦU 1v1 QUA MẠNG (máy host bấm): BẠN vs BẠN 2, mỗi đội có bot như chơi đơn */
     startNetDM(mapId) {
       if (!(window.Net && Net.mode === 'host' && Net.peer)) {
@@ -75,6 +97,7 @@
       AudioFX.ensure();
       mode = 'dm'; paused = false;
       this._netDMMap = mapId; // nhớ map trận MẠNG — ĐẤU LẠI dựng lại đúng map này
+      this._soloMode = false; // trận MẠNG — ĐẤU LẠI về luồng mạng, không phải 1 vs NHIỀU
       mapDef = Maps[mapId];
       _setupLevel(mapDef);
       // MÁY HOST = ĐỘI A (xanh lá) · MÁY GUEST = ĐỘI B (đỏ) — mỗi đội 1 người thật

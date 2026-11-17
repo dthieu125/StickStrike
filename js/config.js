@@ -250,4 +250,9 @@ window.Config = {
     WIN_KILLS: 30,     // đội nào đạt số kill này trước là thắng (5-100, bước 5)
     RESPAWN: 3,        // giây hồi sinh
   },
+
+  /* ── Chế độ 1 vs NHIỀU — MỘT mình bạn vs cả đội bot đỏ trên map ĐẤU TRƯỜNG rộng ── */
+  SOLO: {
+    ENEMIES: 6,        // số bot địch (đội B) — một mình bạn phải đỡ hết
+  },
 };

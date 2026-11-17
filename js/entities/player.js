@@ -413,6 +413,14 @@ window.Player = {
     p.vy = Math.min(p.vy + Config.GRAVITY * dt, Config.MAX_FALL);
     Physics.moveAndCollide(p, level, dt);
 
+    /* 🕳️ GĐ 24 fix: rơi XUYÊN map (hố trên map wave) → GỤC thay vì kẹt dưới đáy
+     * vô hình vẫn xả đạn. hp = 0 → Match.update tự ghi điểm đội địch + hồi sinh. */
+    if (!p.dead && !p.deadTimer && p.y > Level.pxH + 80) {
+      p.hp = 0;
+      Particles.poof(p.x + p.w / 2, Level.pxH - 20); // khói beng tại mép hố
+      Level.splatter && Level.splatter(p.x + p.w / 2, Level.pxH - 10, 0, true);
+    }
+
     if (p.onGround && Math.abs(p.vx) > 15) p.runPhase += Math.abs(p.vx) * dt * 0.055;
     else p.runPhase = 0;
 

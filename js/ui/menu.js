@@ -5,9 +5,9 @@
  * ========================================================= */
 window.Menu = {
   /* 🗺️ MAP dùng chung cho SINH TỔN lẫn ĐẤU ĐỘI — chọn 1 phát, chế độ nào cũng xài */
-  maps: ['deck', 'hangar', 'reactor', 'cargo', 'forest'],
+  maps: ['deck', 'hangar', 'reactor', 'cargo', 'forest', 'colosseum'],
   mapIndex: 0,
-  game: null, // API từ main.js: { startWave, startDM, resume, toMenu, restartWave, restartDM }
+  game: null, // API từ main.js: { startWave, startDM, startSolo, resume, toMenu, restartWave, restartDM }
   previewPhase: 0,
 
   init(game) {
@@ -32,6 +32,8 @@ window.Menu = {
       this._updateMapName(); // lần đầu mở phải có tên map đúng
     };
     $('btnDMStart').onclick = () => { AudioFX.click(); this.game.startDM(this.maps[this.mapIndex]); };
+    // 🎯 1 vs NHIỀU: một mình bạn vs cả đội bot đỏ trên map Đấu Trường RỘNG
+    $('btnSolo').onclick = () => { AudioFX.click(); this.game.startSolo(); };
     $('btnNet').onclick = () => { AudioFX.click(); this.show('net'); };
     $('btnNetBack').onclick = () => {
       AudioFX.click();
@@ -103,9 +105,12 @@ window.Menu = {
     // kết thúc trận
     $('btnRematch').onclick = () => {
       AudioFX.click();
+      // 🎯 1 vs NHIỀU: vừa chơi solo → ĐẤU LẠI = dựng lại trận solo (map Đấu Trường)
+      if (this.game._soloMode) {
+        this.game.startSolo();
       // 🌐 mạng: vừa chơi ĐỐI ĐẦU LAN → ĐẤU LẠI = dựng lại trận MẠNG cùng map
       //   (máy guest nhận 'start-dm' mới → tự nhảy vào trận, không cần tạo phòng lại)
-      if (window.Net && Net.mode === 'host' && Net.peer && this.game._netDMMap) {
+      } else if (window.Net && Net.mode === 'host' && Net.peer && this.game._netDMMap) {
         this.game.startNetDM(this.game._netDMMap);
       } else {
         this.game.startDM(this.maps[this.mapIndex]);

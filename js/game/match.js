@@ -7,7 +7,11 @@ window.Match = {
   scoreA: 0, scoreB: 0, state: 'idle', // idle | playing | ended
   mapDef: null,
 
-  start(mapDef, perTeam) {
+  /* mapDef + perTeam + solo:
+   *   • chơi đơn ĐẤU ĐỘI: perTeam bỏ trống → đội A có N-1 bot (bạn chiếm 1 slot), đội B đủ N
+   *   • 1 vs NHIỀU: solo = true → đội A KHÔNG bot (một mình bạn), đội B đủ số bot Config.SOLO
+   *   • guest dựng view: perTeam = 0 (bot thật do snapshot máy host dựng lại) — solo bỏ trống */
+  start(mapDef, perTeam, solo) {
     this.mapDef = mapDef;
     this.scoreA = 0; this.scoreB = 0;
     this.state = 'playing';
@@ -22,8 +26,9 @@ window.Match = {
     // 🌐 mạng: truyền perTeam (số bot MỖI ĐỘI) — mỗi đội 1 slot là NGƯỜI THẬT
     //   • chơi đơn: perTeam bỏ trống → đội A có N-1 bot (bạn chiếm 1 slot), đội B đủ N
     //   • guest dựng view: perTeam = 0 (bot thật do snapshot máy host dựng lại)
-    const nA = (perTeam != null) ? perTeam : N - 1;
-    const nB = (perTeam != null) ? perTeam : N;
+    let nA = (perTeam != null) ? perTeam : N - 1;
+    const nB = solo ? (Config.SOLO.ENEMIES) : (perTeam != null ? perTeam : N);
+    if (solo) nA = 0; // 1 vs NHIỀU: đội A chỉ có MỘT mình bạn
     for (let i = 0; i < nA; i++) {
       const sp = this.spawnPoint('A');
       Bots.spawn('A', sp.x, sp.y, 'pistol', colors[4]); // xanh lá

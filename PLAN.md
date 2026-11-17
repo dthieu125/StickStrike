@@ -678,6 +678,30 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   chỉ còn nền map. Giờ main.js tự mở lại menu chính ngay khi tiệm đóng (ESC lẫn nút)
 - [x] **123/123 test logic PASS** (không đổi logic test — sửa thuần vẽ/luồng UI)
 
+### 🕳️🎯 GĐ 24 — fix 2 bug Đấu Đội 5v5 + chế độ MỚI "1 vs NHIỀU"
+
+- [x] **🕳️ Rơi hố không chết (5v5)**: nguyên nhân — map ĐẤU ĐỘI chọn được cả map Wave
+  "Boong tàu" (có hố sàn cột 18-20); người lẫn bot rơi xuống dưới đáy map thì KẼT
+  mà không gục (không ai ăn điểm) → trông như "mọi người biến mất, không phân thắng thua".
+  Fix: rơi qua `Level.pxH + 80` → **hp = 0** (gục như bị bắn) — Match.update tự cho
+  đội địch +1 điểm + hồi sinh sau 3s; bot tự respawn như thường; quái đã có
+  sẵn luật này (monster.js). Người thử thấy "xả đạn được" vì bot còn sống dưới đáy.
+- [x] **🎯 Chế độ MỚI "1 vs NHIỀU"** (nút 🎯 ở menu chính): MỘT mình bạn (đội A)
+  vs **6 bot đỏ** (Config.SOLO.ENEMIES) — Match.start nhận tham số `solo`
+  (luồng mạng guest perTeam=0 KHÔNG bị ảnh hưởng)
+- [x] **🏟️ Map MỚI "Đấu Trường Colosseum"**: RỘNG GẤP ĐÔI (120 cột = 3840px),
+  sàn LIỀN MẠCH không hố, chướng ngại dày 3 vùng (container 3-5 ô · trụ đá ·
+  thùng) + giàn giáo một-chiều vòng quanh map + hành lang cao 2 mép;
+  đội B spawn DÃI khắp map (10 điểm từ giữa tới mép phải — bot không dồn góc);
+  hazard ống ga ×3 + cặp cột điện phóng tia ngang; **thêm Props** (thùng nổ/gỗ/
+  ống ga) chỉ chế độ này — "nhiều chướng ngại hơn" đúng yêu cầu
+- [x] Map Đấu Trường cũng chọn được trong ĐẤU ĐỘI 5v5 (menu.maps thêm 'colosseum');
+  nút ĐẤU LẠI thông minh: vừa chơi solo → đấu lại solo, vừa chơi mạng → đấu lại mạng
+- [x] **127/127 test logic PASS ×3** (4 test mới: người rơi hố gục + điểm + hồi sinh;
+  bot rơi hố gục + tự hồi sinh; Match solo đội A 0 bot/đội B đủ 6; map Đấu Trường
+  đúng quy tắc — sàn liền, khối ≤5 ô, spawn trên đất, dải map, props/súng rải được)
+  + menu_click_test OK (5 đường vào trận: wave/wave-coop/dm/solo/netdm)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -728,7 +752,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-23 (chống lag + cửa hàng grid ông già + CỬA HÀNG canvas thay MARKET) — 123/123 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-24 (chống lag + CỬA HÀNG canvas + fix rơi hố 5v5 + chế độ MỚI 1 vs NHIỀU map Đấu Trường) — 127/127 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

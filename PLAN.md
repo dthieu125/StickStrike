@@ -665,6 +665,19 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **123/123 test logic PASS ×3 lần chạy** (2 test mới: Keeper có giờ nghỉ không đổi
   quote mỗi frame + CỬA HÀNG canvas 3 tab/MUA trừ vàng/ông già cau có khi thiếu vàng)
 
+### 🖱️🎯 GĐ 23c — sửa 3 góp ý playtest: con trỏ chuột · tâm quay trang bị · ESC về menu
+
+- [x] **🖱️ Chuột mất trong cửa hàng**: canvas ẩn cursor CSS (`cursor: none`) mà tiệm
+  không vẽ tâm ngắm → không biết chuột ở đâu. Giờ 2 cửa hàng đều tự vẽ 🖱️ CON TRỎ
+  MŨI TÊN trắng viền đen ngay trên panel (vẽ CUỐI cùng); tâm ngắm trận ẩn khi tiệm
+  mở để khỏi 2 con trỏ chồng nhau
+- [x] **🎯 Trang bị quay đúng TRỌNG TÂM**: emoji 🦺🪖👟🥊🛡️ vẽ theo `textBaseline='top'`
+  lệch khỏi điểm xoay → quay "tránh các pích". Đổi sang `textBaseline='middle'` +
+  vẽ tại (0,0) — trọng tâm glyph = điểm quay, xoay đều đúng tâm item
+- [x] **🔙 ESC / ‹ VỀ MENU màn hình trống**: tiệm chỉ tự ẩn mà không mở lại MENU DOM →
+  chỉ còn nền map. Giờ main.js tự mở lại menu chính ngay khi tiệm đóng (ESC lẫn nút)
+- [x] **123/123 test logic PASS** (không đổi logic test — sửa thuần vẽ/luồng UI)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19

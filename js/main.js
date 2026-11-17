@@ -319,6 +319,9 @@
       if (window.Market && Market.open) {
         if (Input.wasPressed('pause')) Market.hide();
         else if (Input.mouse.pressed) Market.handleClick(Input.mouse.x, Input.mouse.y);
+        // tiệm vừa ĐÓNG (ESC hoặc nút ‹ VỀ MENU) → mở lại MENU DOM
+        // (bug: chỉ ẩn tiệm mà không mở menu → màn hình chỉ còn nền map trống)
+        if (!Market.open) { Menu.show('menu'); AudioFX.click(); }
       }
       // camera trôi chậm nhìn quanh map làm nền menu
       Camera.x = (Math.sin(time * 0.1) * 0.5 + 0.5) * Math.max(0, Level.pxW - viewW);
@@ -534,7 +537,8 @@
       // 📱 nút điều khiển mobile — ẩn khi menu/pause (màn DOM đè canvas)
       if (window.Mobile) Mobile.setVisible(mode !== 'menu' && !paused);
       if (Shop.open) Shop.updateAndDraw(ctx, Input.mouse);
-      if (Player.obj && Player.obj.hp > 0) drawCrosshair();
+      // tâm ngắm ẩn khi cửa hàng trận mở — tiệm tự vẽ 🖱️ con trỏ riêng (cho dễ bấm)
+      if (Player.obj && Player.obj.hp > 0 && !Shop.open) drawCrosshair();
       drawVignette();
       drawFog(); // 🎲 sương mù che ngoài tầm nhìn (vẽ cuối để phủ lên hết)
       updateWeaponBar();

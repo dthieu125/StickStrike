@@ -492,6 +492,32 @@ window.Shop = {
         btn.x + btn.w / 2, btn.y + btn.h + 6);
       ctx.textAlign = 'left';
     }
+
+    /* 🖱️ vẽ con trỏ chuột — canvas đang ẩn cursor CSS (cursor:none) mà tiệm
+     * không vẽ tâm ngắm → không biết chuột ở đâu. Con trỏ mũi tên vẽ CUỐI cùng
+     * để nằm trên mọi thứ trong panel. Dùng chung cho cả CỬA HÀNG menu. */
+    this._drawCursor(ctx, mouse.x, mouse.y);
+  },
+
+  /* con trỏ chuột vẽ tay: mũi tên trắng viền đen (giống cursor hệ thống) */
+  _drawCursor(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 14.5);
+    ctx.lineTo(3.6, 11.2);
+    ctx.lineTo(6.2, 17.2);
+    ctx.lineTo(9.2, 15.8);
+    ctx.lineTo(6.6, 10);
+    ctx.lineTo(11.2, 9.2);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.strokeStyle = 'rgba(10,12,16,0.9)';
+    ctx.lineWidth = 1.3;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   },
 
   /* ── vẽ ông già chủ tiệm (người que cụ già: nón lá + chạc + râu trắng) ── */

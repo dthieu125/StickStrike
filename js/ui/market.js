@@ -362,16 +362,16 @@ window.Market = {
       ctx.lineWidth = isSel ? 2 : 1;
       ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
 
-      // icon nghiêng nhẹ — súng/thiết bị quay quanh TÂM (sprite dùng chung của Shop)
+      // icon nghiêng nhẹ — thiết bị VẼ THEO TÂM (textBaseline middle) để quay không lệch trục
       if (item.kind === 'gear') {
         ctx.save();
         ctx.translate(rect.x + rect.w / 2, rect.y + 36);
         ctx.rotate(-0.14);
         ctx.font = '34px "Segoe UI Emoji", system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(item.name.split(' ')[0], 0, 12); // emoji đầu tên món
-        ctx.textAlign = 'left';
-        ctx.restore();
+        ctx.textBaseline = 'middle'; // 🎯 trọng tâm = điểm quay
+        ctx.fillText(item.name.split(' ')[0], 0, 0);
+        ctx.restore(); // restore trả lại cả textBaseline
       } else {
         Shop._drawItem(ctx, { kind: 'weapon', w: item.w }, rect.x + rect.w / 2, rect.y + 36, -0.18, 0.85);
       }
@@ -419,8 +419,8 @@ window.Market = {
         ctx.rotate(now * 1.15);
         ctx.font = '58px "Segoe UI Emoji", system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(it.name.split(' ')[0], 0, 20);
-        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle'; // 🎯 quay quanh TRỌNG TÂM của item (baseline giữa)
+        ctx.fillText(it.name.split(' ')[0], 0, 0);
         ctx.restore();
       } else {
         Shop._drawItem(ctx, { kind: 'weapon', w: it.w }, pcx, pcy, now * 1.15, 1.6);
@@ -487,6 +487,9 @@ window.Market = {
     ctx.fillStyle = '#fff6dd';
     ctx.fillText('‹ VỀ MENU (ESC)', btn.x + btn.w / 2, btn.y + 9);
     ctx.textAlign = 'left';
+
+    // 🖱️ con trỏ chuột (dùng chung với Shop) — canvas ẩn cursor CSS nên phải vẽ tay
+    Shop._drawCursor(ctx, mouse.x, mouse.y);
   },
 
   /* bấm chuột/tap khi tiệm đang mở — trả true nếu "tiêu" được cú click */

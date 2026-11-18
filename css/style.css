@@ -359,6 +359,14 @@ canvas#game {
   box-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
 }
 
+/* chọn ĐỘ CHÍNH XÁC NPC — 4 nút màu cam đỏ, nút đang chọn sáng rực */
+.ai-pick { flex-wrap: wrap; }
+.ai-pick .btn { flex: 1 1 120px; max-width: none; min-width: 120px; }
+.ai-pick .btn.active {
+  border-color: #fb923c; background: rgba(251, 146, 60, 0.22);
+  box-shadow: 0 0 14px rgba(251, 146, 60, 0.4);
+}
+
 /* ── 📱 NÚT ĐIỀU KHIỂN MOBILE — đè lên canvas khi bật chế độ Mobile ── */
 #mobileUI {
   position: absolute; inset: 0;

@@ -185,6 +185,28 @@ window.Menu = {
     };
     devRender();
 
+    // ── 🤖 ĐỘ CHÍNH XÁC CỦA NPC (DỄ 50% · VỪA 75% · KHÓ 90% · SIÊU KHÓ 100%) ──
+    // lưu 'ss_aiLv'; bot đọc Config.AI.accuracy() khi ngắm bắn (bot.js)
+    if (window.Config && Config.AI) {
+      Config.AI.load();
+      const aiIds = ['aiEasy', 'aiNormal', 'aiHard', 'aiInsane'];
+      const aiRender = () => {
+        aiIds.forEach((id, i) => $(id).classList.toggle('active', i === Config.AI.LEVEL));
+        const lv = Config.AI.LEVELS[Config.AI.LEVEL] || Config.AI.LEVELS[1];
+        $('aiNote').textContent = 'NPC sẽ bắn trúng khoảng ' + Math.round(lv.acc * 100) +
+          '% phát — ' + lv.desc + '.';
+      };
+      aiIds.forEach((id, i) => {
+        $(id).onclick = () => {
+          Config.AI.LEVEL = i;
+          Config.AI.save();
+          aiRender();
+          AudioFX.click();
+        };
+      });
+      aiRender();
+    }
+
     this.refreshScores();
     this._previewLoop();
   },

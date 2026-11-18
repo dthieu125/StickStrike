@@ -702,6 +702,23 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   đúng quy tắc — sàn liền, khối ≤5 ô, spawn trên đất, dải map, props/súng rải được)
   + menu_click_test OK (5 đường vào trận: wave/wave-coop/dm/solo/netdm)
 
+### 🤖🎯 GĐ 25 — cài đặt ĐỘ CHÍNH XÁC NPC (DỄ/VỪA/KHÓ/SIÊU KHÓ)
+
+- [x] **Vì sao trước đây bot gần như bách phát bách trúng**: sai số ngắm cũ là
+  góc CỐ ĐỊNH `max(0.03, 0.26 − lockT·0.22)` → chỉ cần khoá mục tiêu ~1s là sai số
+  ≤0.03 rad, trong khi nửa góc thân người ở 300px chỉ ~0.047 rad → gần như phát nào
+  cũng trúng, dồn damage chết ngay khi ló mặt
+- [x] **Độ chính xác theo ĐỘ KHÓ** (⚙️ Cài Đặt): 4 mức **DỄ 50% · VỪA 75% ·
+  KHÓ 90% · SIÊU KHÓ 100%**, lưu `ss_aiLv`, áp dụng MỌI bot (Đấu Đội · 1 vs Nhiều ·
+  bot trận mạng). Sai số ngắm = nửa góc thân mục tiêu ÷ acc → tự co lại khi mục
+  tiêu xa nên **tỉ lệ trúng ổn định mọi khoảng cách** (100% = luôn trong thân,
+  50% = trượt một nửa, có phát lệch hẳn ra ngoài)
+- [x] Nút chọn 4 mức trong Cài Đặt + dòng ghi chú giải thích; mặc định **VỪA 75%**
+- [x] **129/129 test logic PASS ×10 lần chạy** (2 test mới: Config 4 mức đúng
+  50/75/90/100% + lưu/đọc; ĐO THẬT sai số ngắm bot theo từng mức — DỄ lệch gấp đôi
+  SIÊU KHÓ, SIÊU KHÓ không bao giờ ngắm ra ngoài thân) + menu_click_test kiểm tra
+  bấm DỄ → LEVEL 0 + ghi chú 50%
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -752,7 +769,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-24 (chống lag + CỬA HÀNG canvas + fix rơi hố 5v5 + chế độ MỚI 1 vs NHIỀU map Đấu Trường) — 127/127 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-25 (CỬA HÀNG canvas · fix rơi hố 5v5 · 1 vs NHIỀU map Đấu Trường · độ chính xác NPC 4 mức) — 129/129 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

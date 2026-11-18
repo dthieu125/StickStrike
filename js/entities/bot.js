@@ -199,8 +199,18 @@ window.Bots = {
         const tx = aimAt.x + aimAt.w / 2, ty = aimAt.y + aimAt.h * 0.45;
         // map vòng tròn: ngắm QUA MÉP map khi địch đứng bên kia seam
         const want = Math.atan2(ty - eyeY, Level.wrapDx(tx - eyeX));
-        // độ gà: sai số co lại khi đã "khoá" mục tiêu lâu
-        const err = Math.max(0.03, 0.26 - b.lockT * 0.22) * (Math.random() - 0.5) * 2;
+        /* 🎯 ĐỘ CHÍNH XÁC THEO ĐỘ KHÓ (⚙️ Cài Đặt): sai số ngắm tính theo
+         * NỬA GÓC của mục tiêu (nửa bề rộng thân / khoảng cách) chia cho acc:
+         *   acc 100% (SIÊU KHÓ) → sai số ≤ nửa góc → LUÔN trúng
+         *   acc 90%  (KHÓ)      → ±1.11 nửa góc → ~90% phát trúng
+         *   acc 75%  (VỪA)      → ±1.33 nửa góc → ~75% phát trúng
+         *   acc 50%  (DỄ)       → ±2    nửa góc → ~50% phát trúng (trượt liền tù tì)
+         * Ưu điểm: sai số tự co lại khi mục tiêu XA (góc nhỏ) → tỉ lệ trúng
+         * ổn định mọi khoảng cách, không còn "bách phát bách trúng" như trước. */
+        const acc = Math.max(0.35, (window.Config && Config.AI) ? Config.AI.accuracy() : 0.75);
+        const dist = Math.max(70, Math.abs(Level.wrapDx(tx - eyeX)));
+        const halfAng = Math.atan2(aimAt.w * 0.45 + 5, dist); // nửa góc thân mục tiêu
+        const err = (halfAng / acc) * (Math.random() * 2 - 1);
         b.aimAngle = want + err;
         b.facing = Math.cos(b.aimAngle) >= 0 ? 1 : -1;
 

@@ -255,4 +255,35 @@ window.Config = {
   SOLO: {
     ENEMIES: 6,        // số bot địch (đội B) — một mình bạn phải đỡ hết
   },
+
+  /* ── 🎯 ĐỘ CHÍNH XÁC CỦA NPC (bot) — chỉnh ở ⚙️ Cài Đặt ──
+   * acc = tỉ lệ bắn TRÚNG mục tiêu ở khoảng cách thường:
+   * sai số ngắm được tính theo NỬA GÓC thân mục tiêu (nửa bề rộng / khoảng
+   * cách) chia cho acc → 50% = sai số trải ±2 nửa góc (chỉ ~1/2 phát trúng),
+   * 100% = sai số ≤ nửa góc = ngắm chuẩn xác hoàn toàn.
+   * Áp dụng cho MỌI bot: Đấu Đội, 1 vs Nhiều, bot đi kèm trận mạng. */
+  AI: {
+    LEVEL: 1, // 0 DỄ · 1 VỪA · 2 KHÓ · 3 SIÊU KHÓ (lưu localStorage 'ss_aiLv')
+    LEVELS: [
+      { name: '😌 DỄ',       acc: 0.50, desc: 'NPC bắn trượt một nửa — thở phào mà đánh' },
+      { name: '🙂 VỪA',      acc: 0.75, desc: 'cân bằng — ló mặt là phải núp' },
+      { name: '😠 KHÓ',      acc: 0.90, desc: 'bắn rất chuẩn — kiếm cover NGAY' },
+      { name: '💀 SIÊU KHÓ', acc: 1.00, desc: 'ngắm chuẩn 100% — đừng đứng yên một chỗ' },
+    ],
+    accuracy() {
+      const L = this.LEVELS[this.LEVEL] || this.LEVELS[1];
+      return L.acc;
+    },
+    load() {
+      let i = 1;
+      try {
+        const v = parseInt(localStorage.getItem('ss_aiLv'), 10);
+        if (v >= 0 && v < this.LEVELS.length) i = v;
+      } catch (e) { /* không có localStorage → mặc định VỪA */ }
+      this.LEVEL = i;
+    },
+    save() {
+      try { localStorage.setItem('ss_aiLv', String(this.LEVEL)); } catch (e) { /* bỏ qua */ }
+    },
+  },
 };

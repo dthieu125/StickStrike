@@ -308,6 +308,13 @@ window.Menu = {
     }, true);
 
     /* ═══ 🗺️ BẢN ĐỒ CỦA TÔI — map tự thiết kế (JSON) ═══ */
+    // thông báo ngay trong màn (toast vẽ trên canvas bị màn phủ che)
+    const setMapMsg = (txt, bad) => {
+      const el = $('mapMsg');
+      if (!el) return;
+      el.textContent = txt || '';
+      el.style.color = bad ? '#f43f5e' : '#4ade80';
+    };
     if (window.MapEdit) {
       MapEdit.loadAll();
       for (const m of MapEdit.list) if (!this.maps.includes(m.id)) this.maps.push(m.id);
@@ -316,6 +323,8 @@ window.Menu = {
       AudioFX.click();
       if (!window.MapEdit) return;
       const ok = MapEdit.download(MapEdit.template(), 'stickstrike-map-mau.json');
+      setMapMsg(ok ? '⬇️ Đã tải map mẫu — mở bằng Notepad / VS Code, sửa lưới rồi bấm NHẬP MAP'
+        : '❌ Trình duyệt chặn tải file — thử lại nhé', !ok);
       if (window.showToast) {
         window.showToast(ok ? '⬇️ Đã tải map mẫu — mở bằng Notepad / VS Code để sửa'
           : '❌ Trình duyệt chặn tải file — thử lại nhé');
@@ -327,10 +336,11 @@ window.Menu = {
       const id = this.maps[this.mapIndex];
       const obj = MapEdit.exportCurrent(id);
       if (!obj) {
-        if (window.showToast) window.showToast('❌ Map này không xuất được');
+        setMapMsg('❌ Map này không xuất được', true);
         return;
       }
       const ok = MapEdit.download(obj, 'stickstrike-' + id + '.json');
+      setMapMsg(ok ? '📤 Đã tải map "' + obj.name + '"' : '❌ Trình duyệt chặn tải file', !ok);
       if (window.showToast) window.showToast(ok ? '📤 Đã tải map "' + obj.name + '"' : '❌ Trình duyệt chặn tải file');
     };
     $('btnMapImport').onclick = () => {
@@ -347,15 +357,19 @@ window.Menu = {
       rd.onload = () => {
         const r = MapEdit.importText(String(rd.result));
         if (!r.ok) {
-          if (window.showToast) window.showToast('❌ ' + r.error);
+          setMapMsg('❌ ' + r.error, true);
           return;
         }
         this._myMapRender();
+        setMapMsg('✅ Đã nhập map "' + r.def.name + '" — đã chọn sẵn, bấm ‹ Về menu rồi vào trận');
         if (window.showToast) window.showToast('✅ Đã nhập map "' + r.def.name + '" — chọn sẵn trong menu');
       };
-      rd.onerror = () => { if (window.showToast) window.showToast('❌ Không đọc được file'); };
+      rd.onerror = () => setMapMsg('❌ Không đọc được file', true);
       rd.readAsText(file);
     };
+    $('mapFile').accept = '.json,application/json';
+    // xoá thông báo cũ mỗi lần mở lại màn
+    $('btnMaps').addEventListener('click', () => setMapMsg(''));
     this._myMapRender();
     this._setRefresh();
 

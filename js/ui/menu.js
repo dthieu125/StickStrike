@@ -14,7 +14,7 @@ window.Menu = {
     this.game = game;
     const $ = (id) => document.getElementById(id);
     this.el = {
-      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'), settings: $('settings'),
+      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'), settings: $('settings'), mymaps: $('mymaps'), setModal: $('setModal'),
       mapName: $('mapName'), records: $('records'), hatBtn: $('hatBtn'),
       goTitle: $('goTitle'), goStats: $('goStats'),
       meTitle: $('meTitle'), meStats: $('meStats'),
@@ -67,10 +67,13 @@ window.Menu = {
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
     $('btnTips').onclick = () => { AudioFX.click(); this.show('tips'); };
     $('btnTipsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
-    // ⚙️ CÀI ĐẶT — đường ngắm · trang phục · phím (màn PHÍM giờ nằm trong Cài Đặt)
-    $('btnSettings').onclick = () => { AudioFX.click(); this.show('settings'); this._drawAimPreview(); this._lookPreview(); };
+    // ⚙️ CÀI ĐẶT — mỗi mục 1 DÒNG, bấm mở hộp thoại riêng (✔ OK lưu · ✖ HUỶ bỏ)
+    $('btnSettings').onclick = () => { AudioFX.click(); this.show('settings'); this._setRefresh(); };
     $('btnSettingsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
     $('btnKeysOpen').onclick = () => { AudioFX.click(); this.show('keys'); };
+    // 🗺️ BẢN ĐỒ CỦA TÔI — tải map mẫu / nhập map tự thiết kế
+    $('btnMaps').onclick = () => { AudioFX.click(); this.show('mymaps'); this._myMapRender(); };
+    $('btnMapsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
     $('mapPrev').onclick = () => { this.mapIndex = (this.mapIndex + this.maps.length - 1) % this.maps.length; this._updateMapName(); AudioFX.click(); };
     $('mapNext').onclick = () => { this.mapIndex = (this.mapIndex + 1) % this.maps.length; this._updateMapName(); AudioFX.click(); };
 
@@ -84,15 +87,6 @@ window.Menu = {
     $('dmKillsPlus').onclick = () => { Config.DM.WIN_KILLS = Math.min(100, Config.DM.WIN_KILLS + 5); dmKillsRender(); AudioFX.click(); };
     dmSizeRender();
     dmKillsRender();
-    this.el.hatBtn.onclick = () => {
-      const hats = Config.HATS;
-      const next = hats[(hats.indexOf(Config.PLAYER.HAT) + 1) % hats.length];
-      Config.PLAYER.HAT = next;
-      localStorage.setItem('ss_hat', next);
-      this.el.hatBtn.textContent = '🎩 Mũ: ' + next;
-      AudioFX.click();
-      this._lookPreview();
-    };
 
     // pause
     $('btnResume').onclick = () => { AudioFX.click(); this.game.resume(); };
@@ -118,31 +112,42 @@ window.Menu = {
     };
     $('btnGoMenu2').onclick = () => { AudioFX.click(); this.game.toMenu(); };
 
-    // chấm màu áo
-    const dots = $('colorDots');
-    Config.TEAM_COLORS.forEach((col) => {
-      const d = document.createElement('div');
-      d.className = 'dot' + (col === Config.PLAYER.COLOR ? ' active' : '');
-      d.style.background = col;
-      d.onclick = () => {
-        Config.PLAYER.COLOR = col;
-        localStorage.setItem('ss_color', col);
-        dots.querySelectorAll('.dot').forEach((x) => x.classList.remove('active'));
-        d.classList.add('active');
-        AudioFX.click();
-        this._lookPreview();
-      };
-      dots.appendChild(d);
-    });
-
+    // ── 👕 Trang phục — chấm màu + mũ (chỉ LƯU khi bấm ✔ OK trong hộp thoại) ──
     // khôi phục tuỳ chọn đã lưu
     const savedColor = localStorage.getItem('ss_color');
     if (savedColor && Config.TEAM_COLORS.includes(savedColor)) Config.PLAYER.COLOR = savedColor;
     const savedHat = localStorage.getItem('ss_hat');
     if (savedHat && Config.HATS.includes(savedHat)) Config.PLAYER.HAT = savedHat;
-    this.el.hatBtn.textContent = '🎩 Mũ: ' + Config.PLAYER.HAT;
 
-    // ── 🎯 ĐƯỜNG NGẮM (⚙️ Cài Đặt) — khôi phục + wire + lưu 'ss_aim' ──
+    const dots = $('colorDots');
+    const dotEls = [];
+    Config.TEAM_COLORS.forEach((col) => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      d.style.background = col;
+      d.onclick = () => {
+        Config.PLAYER.COLOR = col;
+        AudioFX.click();
+        renderLook();
+        this._lookPreview();
+      };
+      dots.appendChild(d);
+      dotEls.push(d);
+    });
+    const renderLook = () => {
+      dotEls.forEach((d, i) => d.classList.toggle('active', Config.TEAM_COLORS[i] === Config.PLAYER.COLOR));
+      this.el.hatBtn.textContent = '🎩 Mũ: ' + Config.PLAYER.HAT;
+    };
+    this.el.hatBtn.onclick = () => {
+      const hats = Config.HATS;
+      Config.PLAYER.HAT = hats[(hats.indexOf(Config.PLAYER.HAT) + 1) % hats.length];
+      AudioFX.click();
+      renderLook();
+      this._lookPreview();
+    };
+    renderLook();
+
+    // ── 🎯 ĐƯỜNG NGẮM (⚙️ Cài Đặt) — khôi phục 'ss_aim'; chỉ LƯU khi bấm OK ──
     try {
       const saved = JSON.parse(localStorage.getItem('ss_aim') || 'null');
       if (saved) Object.assign(Config.AIM, saved);
@@ -150,22 +155,19 @@ window.Menu = {
     const aim = Config.AIM;
     const aimW = $('aimWidth'), aimA = $('aimAlpha'), aimC = $('aimColor'), aimD = $('aimDash');
     const aimWl = $('aimWidthLabel'), aimAl = $('aimAlphaLabel');
-    aimW.value = aim.WIDTH;
-    aimA.value = Math.round(aim.ALPHA * 100);
-    aimC.value = aim.COLOR;
-    aimD.value = String(aim.DASH);
-    aimWl.textContent = aim.WIDTH + 'px';
-    aimAl.textContent = Math.round(aim.ALPHA * 100) + '%';
-    const aimSave = () => {
-      try { localStorage.setItem('ss_aim', JSON.stringify({
-        WIDTH: aim.WIDTH, ALPHA: aim.ALPHA, COLOR: aim.COLOR, DASH: aim.DASH,
-      })); } catch (e) { /* bỏ qua */ }
-      this._drawAimPreview();
+    const syncAim = () => {
+      aimW.value = aim.WIDTH;
+      aimA.value = Math.round(aim.ALPHA * 100);
+      aimC.value = aim.COLOR;
+      aimD.value = String(aim.DASH);
+      aimWl.textContent = aim.WIDTH + 'px';
+      aimAl.textContent = Math.round(aim.ALPHA * 100) + '%';
     };
-    aimW.oninput = () => { aim.WIDTH = +aimW.value; aimWl.textContent = aim.WIDTH + 'px'; aimSave(); };
-    aimA.oninput = () => { aim.ALPHA = +aimA.value / 100; aimAl.textContent = aimA.value + '%'; aimSave(); };
-    aimC.oninput = () => { aim.COLOR = aimC.value; aimSave(); };
-    aimD.onchange = () => { aim.DASH = aimD.value; AudioFX.click(); aimSave(); };
+    syncAim();
+    aimW.oninput = () => { aim.WIDTH = +aimW.value; aimWl.textContent = aim.WIDTH + 'px'; this._drawAimPreview(); };
+    aimA.oninput = () => { aim.ALPHA = +aimA.value / 100; aimAl.textContent = aimA.value + '%'; this._drawAimPreview(); };
+    aimC.oninput = () => { aim.COLOR = aimC.value; this._drawAimPreview(); };
+    aimD.onchange = () => { aim.DASH = aimD.value; AudioFX.click(); this._drawAimPreview(); };
 
     // ── 📱 THIẾT BỊ (🖥️ PC / 📱 Mobile) — đổi chế độ điều khiển, lưu 'ss_device' ──
     // Mobile.init() đã tự chọn theo thiết bị; 2 nút này cho đổi tay bất cứ lúc nào
@@ -173,6 +175,8 @@ window.Menu = {
       const mob = !!(window.Mobile && Mobile.enabled);
       $('devPC').classList.toggle('active', !mob);
       $('devMobile').classList.toggle('active', mob);
+      const cur = $('devCur');
+      if (cur) cur.textContent = mob ? '📱 MOBILE' : '🖥️ MÁY TÍNH';
     };
     $('devPC').onclick = () => { AudioFX.click(); if (window.Mobile) Mobile.setEnabled(false); devRender(); };
     $('devMobile').onclick = () => {
@@ -187,19 +191,20 @@ window.Menu = {
 
     // ── 🤖 ĐỘ CHÍNH XÁC CỦA NPC (DỄ 50% · VỪA 75% · KHÓ 90% · SIÊU KHÓ 100%) ──
     // lưu 'ss_aiLv'; bot đọc Config.AI.accuracy() khi ngắm bắn (bot.js)
+    let aiRender = () => {};
     if (window.Config && Config.AI) {
       Config.AI.load();
       const aiIds = ['aiEasy', 'aiNormal', 'aiHard', 'aiInsane'];
-      const aiRender = () => {
+      aiRender = () => {
         aiIds.forEach((id, i) => $(id).classList.toggle('active', i === Config.AI.LEVEL));
         const lv = Config.AI.LEVELS[Config.AI.LEVEL] || Config.AI.LEVELS[1];
-        $('aiNote').textContent = 'NPC sẽ bắn trúng khoảng ' + Math.round(lv.acc * 100) +
+        const note = $('aiNote');
+        if (note) note.textContent = 'NPC sẽ bắn trúng khoảng ' + Math.round(lv.acc * 100) +
           '% phát — ' + lv.desc + '.';
       };
       aiIds.forEach((id, i) => {
         $(id).onclick = () => {
           Config.AI.LEVEL = i;
-          Config.AI.save();
           aiRender();
           AudioFX.click();
         };
@@ -207,8 +212,225 @@ window.Menu = {
       aiRender();
     }
 
+    /* ═══ HỘP THOẠI CÀI ĐẶT — mỗi mục 1 dòng, ✔ OK lưu · ✖ HUỶ trả lại như cũ ═══
+     * Khi mở: chụp lại giá trị hiện tại. Slider/nút trong hộp thoại đổi TRỰC TIẾP
+     * Config (để thấy ngay hiệu ứng) nhưng KHÔNG ghi localStorage — chỉ khi OK mới
+     * lưu; HUỶ/ESC thì khôi phục ảnh chụp. */
+    const setModal = $('setModal');
+    const panes = { aim: 'paneAim', look: 'paneLook', ai: 'paneAi', device: 'paneDevice' };
+    const titles = {
+      aim: '🎯 ĐƯỜNG NGẮM BẮN',
+      look: '👕 TRANG PHỤC',
+      ai: '🤖 ĐỘ CHÍNH XÁC CỦA NPC',
+      device: '📱 THIẾT BỊ ĐIỀU KHIỂN',
+    };
+    let paneNow = null, snap = null;
+    const openPane = (pane) => {
+      snap = {
+        aim: { WIDTH: aim.WIDTH, ALPHA: aim.ALPHA, COLOR: aim.COLOR, DASH: aim.DASH },
+        color: Config.PLAYER.COLOR,
+        hat: Config.PLAYER.HAT,
+        ai: (window.Config && Config.AI) ? Config.AI.LEVEL : 1,
+        mobile: !!(window.Mobile && Mobile.enabled),
+      };
+      paneNow = pane;
+      const tt = $('setModalTitle');
+      if (tt) tt.textContent = titles[pane] || 'Cài đặt';
+      Object.keys(panes).forEach((k) => {
+        const el2 = $(panes[k]);
+        if (el2 && el2.classList) el2.classList.toggle('hidden', k !== pane);
+      });
+      setModal.classList.remove('hidden');
+      if (pane === 'aim') { syncAim(); this._drawAimPreview(); }
+      else if (pane === 'look') { renderLook(); this._lookPreview(); }
+      else if (pane === 'ai') aiRender();
+      else if (pane === 'device') devRender();
+    };
+    const closePane = () => { setModal.classList.add('hidden'); paneNow = null; };
+    const applyPane = () => {
+      if (paneNow === 'aim') {
+        try {
+          localStorage.setItem('ss_aim', JSON.stringify({
+            WIDTH: aim.WIDTH, ALPHA: aim.ALPHA, COLOR: aim.COLOR, DASH: aim.DASH,
+          }));
+        } catch (e) { /* bỏ qua */ }
+      } else if (paneNow === 'look') {
+        try {
+          localStorage.setItem('ss_color', Config.PLAYER.COLOR);
+          localStorage.setItem('ss_hat', Config.PLAYER.HAT);
+        } catch (e) { /* bỏ qua */ }
+      } else if (paneNow === 'ai' && window.Config && Config.AI) {
+        Config.AI.save();
+        const lv = Config.AI.LEVELS[Config.AI.LEVEL] || Config.AI.LEVELS[1];
+        if (window.showToast) window.showToast('🤖 NPC bắn trúng ~' + Math.round(lv.acc * 100) + '% — ' + lv.desc);
+      }
+      this._setRefresh();
+      closePane();
+    };
+    const cancelPane = () => {
+      if (snap) {
+        if (paneNow === 'aim') {
+          Object.assign(aim, snap.aim);
+          syncAim();
+          this._drawAimPreview();
+        } else if (paneNow === 'look') {
+          Config.PLAYER.COLOR = snap.color;
+          Config.PLAYER.HAT = snap.hat;
+          renderLook();
+          this._lookPreview();
+        } else if (paneNow === 'ai' && window.Config && Config.AI) {
+          Config.AI.LEVEL = snap.ai;
+          aiRender();
+        } else if (paneNow === 'device' && window.Mobile) {
+          Mobile.setEnabled(snap.mobile);
+          devRender();
+        }
+      }
+      this._setRefresh();
+      closePane();
+    };
+    $('setAimRow').onclick = () => { AudioFX.click(); openPane('aim'); };
+    $('setLookRow').onclick = () => { AudioFX.click(); openPane('look'); };
+    $('setAiRow').onclick = () => { AudioFX.click(); openPane('ai'); };
+    $('setDeviceRow').onclick = () => { AudioFX.click(); openPane('device'); };
+    $('btnSetOK').onclick = () => { AudioFX.click(); applyPane(); };
+    $('btnSetCancel').onclick = () => { AudioFX.click(); cancelPane(); };
+    if (setModal && setModal.addEventListener) {
+      setModal.addEventListener('click', (e) => { if (e.target === setModal) cancelPane(); });
+    }
+    // ESC = HUỶ hộp thoại (chặn ở pha capture để main.js không mở pause/menu)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && setModal && !setModal.classList.contains('hidden')) {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelPane();
+      }
+    }, true);
+
+    /* ═══ 🗺️ BẢN ĐỒ CỦA TÔI — map tự thiết kế (JSON) ═══ */
+    if (window.MapEdit) {
+      MapEdit.loadAll();
+      for (const m of MapEdit.list) if (!this.maps.includes(m.id)) this.maps.push(m.id);
+    }
+    $('btnMapTemplate').onclick = () => {
+      AudioFX.click();
+      if (!window.MapEdit) return;
+      const ok = MapEdit.download(MapEdit.template(), 'stickstrike-map-mau.json');
+      if (window.showToast) {
+        window.showToast(ok ? '⬇️ Đã tải map mẫu — mở bằng Notepad / VS Code để sửa'
+          : '❌ Trình duyệt chặn tải file — thử lại nhé');
+      }
+    };
+    $('btnMapExport').onclick = () => {
+      AudioFX.click();
+      if (!window.MapEdit) return;
+      const id = this.maps[this.mapIndex];
+      const obj = MapEdit.exportCurrent(id);
+      if (!obj) {
+        if (window.showToast) window.showToast('❌ Map này không xuất được');
+        return;
+      }
+      const ok = MapEdit.download(obj, 'stickstrike-' + id + '.json');
+      if (window.showToast) window.showToast(ok ? '📤 Đã tải map "' + obj.name + '"' : '❌ Trình duyệt chặn tải file');
+    };
+    $('btnMapImport').onclick = () => {
+      AudioFX.click();
+      const f = $('mapFile');
+      if (!f) return;
+      f.value = '';
+      f.click();
+    };
+    $('mapFile').onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !window.MapEdit) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        const r = MapEdit.importText(String(rd.result));
+        if (!r.ok) {
+          if (window.showToast) window.showToast('❌ ' + r.error);
+          return;
+        }
+        this._myMapRender();
+        if (window.showToast) window.showToast('✅ Đã nhập map "' + r.def.name + '" — chọn sẵn trong menu');
+      };
+      rd.onerror = () => { if (window.showToast) window.showToast('❌ Không đọc được file'); };
+      rd.readAsText(file);
+    };
+    this._myMapRender();
+    this._setRefresh();
+
     this.refreshScores();
     this._previewLoop();
+  },
+
+  /* chữ tóm tắt ở từng DÒNG trong ⚙️ Cài Đặt (cập nhật sau khi OK) */
+  _setRefresh() {
+    const $ = (id) => document.getElementById(id);
+    const A = Config.AIM;
+    if ($('aimCur')) $('aimCur').textContent = A.WIDTH + 'px · ' + Math.round(A.ALPHA * 100) + '%';
+    if ($('lookCur')) $('lookCur').textContent = '🎩 ' + Config.PLAYER.HAT;
+    if (window.Config && Config.AI && $('aiCur')) {
+      const lv = Config.AI.LEVELS[Config.AI.LEVEL] || Config.AI.LEVELS[1];
+      $('aiCur').textContent = lv.name + ' · ' + Math.round(lv.acc * 100) + '%';
+    }
+    if ($('devCur')) $('devCur').textContent = (window.Mobile && Mobile.enabled) ? '📱 MOBILE' : '🖥️ MÁY TÍNH';
+  },
+
+  /* 🗺️ danh sách map tự tạo — mỗi dòng: tên + kích thước + nút CHƠI/XUẤT/XOÁ */
+  _myMapRender() {
+    const box = document.getElementById('myMapList');
+    if (!box) return;
+    if (!window.MapEdit || !MapEdit.list.length) {
+      box.innerHTML = '<p class="market-note">Chưa có map tự tạo nào — bấm <b>📥 NHẬP MAP (.json)</b> để thêm.</p>';
+      return;
+    }
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    box.innerHTML = MapEdit.list.map((m) => {
+      const cols = m.rows[0].length, rows = m.rows.length;
+      return '<div class="mymap-row">' +
+        '<span class="mymap-name">' + esc(m.name) +
+        '<small>' + cols + '×' + rows + ' ô · ' + (cols * 32) + '×' + (rows * 32) + 'px</small></span>' +
+        '<button class="btn small primary" data-myplay="' + esc(m.id) + '">▶ CHƠI</button>' +
+        '<button class="btn small" data-myexport="' + esc(m.id) + '">📤 XUẤT</button>' +
+        '<button class="btn small" data-mydelete="' + esc(m.id) + '">🗑 XOÁ</button>' +
+        '</div>';
+    }).join('');
+    box.querySelectorAll('button[data-myplay]').forEach((b) => {
+      b.onclick = () => { AudioFX.click(); this._playMyMap(b.getAttribute('data-myplay')); };
+    });
+    box.querySelectorAll('button[data-myexport]').forEach((b) => {
+      b.onclick = () => {
+        AudioFX.click();
+        const id = b.getAttribute('data-myexport');
+        const obj = MapEdit.exportCurrent(id);
+        if (obj) MapEdit.download(obj, 'stickstrike-' + id + '.json');
+        if (window.showToast) window.showToast(obj ? '📤 Đã tải map "' + obj.name + '"' : '❌ Không xuất được map');
+      };
+    });
+    box.querySelectorAll('button[data-mydelete]').forEach((b) => {
+      b.onclick = () => {
+        AudioFX.click();
+        const id = b.getAttribute('data-mydelete');
+        const m = MapEdit.list.find((x) => x.id === id);
+        if (m && window.confirm && !window.confirm('Xoá map "' + m.name + '"? Không khôi phục được.')) return;
+        MapEdit.remove(id);
+        this._myMapRender();
+        if (window.showToast) window.showToast('🗑 Đã xoá map');
+      };
+    });
+  },
+
+  /* chọn map tự tạo làm map đang chơi rồi về menu */
+  _playMyMap(id) {
+    if (!Maps[id]) return;
+    if (!this.maps.includes(id)) this.maps.push(id);
+    this.mapIndex = this.maps.indexOf(id);
+    this._updateMapName();
+    if (window.showToast) {
+      window.showToast('🗺️ Đã chọn "' + Maps[id].name + '" — bấm 🎮 SINH TỒN hoặc 🤖 ĐẤU ĐỘI');
+    }
+    this.show('menu');
   },
 
   /* 🎯 vẽ xem trước ĐƯỜNG NGẮM đúng cài đặt hiện tại (canvas #aimPrev) */
@@ -252,7 +474,8 @@ window.Menu = {
   },
 
   _updateMapName() {
-    this.el.mapName.textContent = Maps[this.maps[this.mapIndex]].name;
+    const def = Maps[this.maps[this.mapIndex]];
+    this.el.mapName.textContent = def ? def.name : '❔ Map';
   },
 
   /* Cập nhật CHỮ GỢI Ý PHÍM theo bind hiện tại — đổi phím ở menu là chữ tự đổi theo */
@@ -291,12 +514,15 @@ window.Menu = {
 
   show(panel) {
     Market.hide(); KeySettings.hide(); // rời chợ / bảng phím nếu đang mở
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings'].forEach((id) => {
+    // đóng hộp thoại Cài Đặt nếu đang mở (đổi màn hình = bỏ chỉnh dở)
+    if (this.el.setModal) this.el.setModal.classList.add('hidden');
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps'].forEach((id) => {
       this.el[id].classList.toggle('hidden', id !== panel);
     });
   },
   hideAll() {
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings'].forEach((id) => this.el[id].classList.add('hidden'));
+    if (this.el.setModal) this.el.setModal.classList.add('hidden');
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps'].forEach((id) => this.el[id].classList.add('hidden'));
   },
 
   /* 🌐 màn hình LAN: cập nhật dòng trạng thái + hiện nút BẮT ĐẦU khi đủ 2 người */

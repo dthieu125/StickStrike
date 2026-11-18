@@ -719,6 +719,28 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   SIÊU KHÓ, SIÊU KHÓ không bao giờ ngắm ra ngoài thân) + menu_click_test kiểm tra
   bấm DỄ → LEVEL 0 + ghi chú 50%
 
+### ⚙️🧩 GĐ 26 — gom CÀI ĐẶT thành DANH SÁCH + hộp thoại OK/HUỶ & 🗺️ BẢN ĐỒ CỦA TÔI
+
+- [x] **⚙️ Cài Đặt gọn lại**: bỏ hàng loạt slider/nút rải rác, mỗi mục thành **1 DÒNG**
+  (🎯 Đường ngắm bắn · 👕 Trang phục · 🤖 Độ chính xác NPC · 📱 Thiết bị · ⌨️ Phím chức năng).
+  Dòng hiện luôn giá trị tóm tắt bên phải (vd `2px · 35%`, `🙂 VỪA · 75%`)
+- [x] **Hộp thoại OK / HUỶ thật**: bấm dòng → mở popup chỉnh riêng. Chỉnh thấy hiệu ứng
+  ngay nhưng **chưa ghi localStorage**; ✔ OK mới lưu + cập nhật dòng · ✖ HUỶ (hoặc ESC,
+  hoặc bấm ra ngoài) **khôi phục nguyên trạng** ảnh chụp lúc mở. ESC chặn ở pha capture
+  để không rơi vào pause/menu của main.js
+- [x] **🗺️ BẢN ĐỒ CỦA TÔI** (menu chính): ⬇️ tải map mẫu JSON · 📤 xuất map đang chọn ·
+  📥 nhập file `.json` → kiểm tra hợp lệ → **lưu vĩnh viễn `ss_maps`** → tự chọn trong
+  ô map ở menu, chơi được cả SINH TỒN lẫn ĐẤU ĐỘI; danh sách map tự tạo có nút ▶ CHƠI /
+  📤 XUẤT / 🗑 XOÁ
+- [x] **Khuôn map**: lưới 24 hàng × 60 cột (ô 32px), `#` tường · `-` bậc 1 chiều · `.` trống,
+  sàn đáy liền, spawn `A`/`B`. Chặn file hỏng: JSON sai, thiếu `rows`, ký tự lạ, ngoài
+  12-40 hàng / 20-160 cột, file > 300KB; tự bỏ hazard/cây sai, tự thêm spawn mặc định
+  nếu thiếu; tên map lọc HTML + gộp khoảng trắng
+- [x] **134/134 test logic PASS ×3** (5 test mới: map mẫu hợp lệ · import lưu/đọc lại/xoá
+  · chặn file hỏng + spawn mặc định · map tự tạo nạp Level đúng + sàn đáy đặc + spawn
+  từ `spawns.A` · xuất→nhập giữ kích thước + map sinh bằng `build()` vẫn xuất được) +
+  menu_click_test kiểm tra mở/OK/HUỶ hộp thoại (HUỶ trả lại độ dày + mức NPC, OK mới lưu)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -769,7 +791,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-25 (CỬA HÀNG canvas · fix rơi hố 5v5 · 1 vs NHIỀU map Đấu Trường · độ chính xác NPC 4 mức) — 129/129 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-26 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt dạng danh sách OK/HUỶ · BẢN ĐỒ CỦA TÔI) — 134/134 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

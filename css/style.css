@@ -297,7 +297,7 @@ canvas#game {
 .tip-block p b { color: #ffe066; }
 
 /* ── Panel 🏪 MARKET — chợ trang bị ── */
-.market-panel { max-width: 640px; width: 94%; }
+.market-panel { max-width: 640px; width: 94%; max-height: 90vh; overflow-y: auto; }
 
 /* ── Panel 🌐 2 NGƯỜI QUA MẠNG (LAN) ── */
 .net-join { justify-content: center; }
@@ -366,6 +366,62 @@ canvas#game {
   border-color: #fb923c; background: rgba(251, 146, 60, 0.22);
   box-shadow: 0 0 14px rgba(251, 146, 60, 0.4);
 }
+
+/* ═══ ⚙️ CÀI ĐẶT dạng DANH SÁCH — mỗi mục 1 DÒNG, bấm mở hộp thoại ═══ */
+.set-menu { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 16px; }
+.set-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 10px; padding: 11px 14px; cursor: pointer; color: #fff;
+  font: inherit; transition: background 0.15s, border-color 0.15s;
+}
+.set-item:hover { background: rgba(34, 211, 238, 0.12); border-color: rgba(34, 211, 238, 0.6); }
+.set-item .si-ico { font-size: 20px; width: 26px; text-align: center; flex-shrink: 0; }
+.set-item .si-txt { flex: 1; min-width: 0; }
+.set-item .si-txt b { display: block; font-size: 14.5px; }
+.set-item .si-txt small { display: block; font-size: 12px; color: #9fb4d8; margin-top: 2px; }
+.set-item .si-cur { font-size: 12.5px; font-weight: 700; color: #ffe066; white-space: nowrap; }
+.set-item .si-arrow { font-size: 22px; color: #22d3ee; flex-shrink: 0; }
+
+/* HỘP THOẠI chỉnh 1 mục — nền mờ, hộp giữa màn hình, có OK/HUỶ */
+.set-modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(2, 8, 18, 0.72);
+}
+.set-modal.hidden { display: none; }
+.set-modal-box {
+  width: min(560px, 92vw); max-height: 86vh; overflow-y: auto;
+  background: linear-gradient(180deg, #101c33, #0a1324);
+  border: 1px solid rgba(34, 211, 238, 0.45); border-radius: 14px;
+  padding: 18px 20px; text-align: left;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+}
+.set-modal-box h3 { margin: 0 0 12px; font-size: 16px; letter-spacing: 0.5px; color: #7df3ff; }
+.set-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.set-modal-actions .btn { min-width: 130px; }
+
+/* ═══ 🗺️ BẢN ĐỒ CỦA TÔI ═══ */
+.map-help {
+  font-size: 12.5px; line-height: 1.7; color: #cdd9ec;
+  background: rgba(34, 211, 238, 0.07);
+  border: 1px dashed rgba(34, 211, 238, 0.3);
+  border-radius: 10px; padding: 10px 14px; margin: 0 0 14px; text-align: left;
+}
+.map-help code {
+  background: rgba(0, 0, 0, 0.35); color: #7df3ff;
+  padding: 1px 5px; border-radius: 4px; font-size: 12px;
+}
+.mymap-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.mymap-row {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 10px; padding: 8px 12px;
+}
+.mymap-name { flex: 1; min-width: 0; font-size: 14px; color: #fff; overflow: hidden; text-overflow: ellipsis; }
+.mymap-name small { display: block; font-size: 11.5px; color: #9fb4d8; margin-top: 2px; }
+.mymap-row .btn { flex-shrink: 0; }
 
 /* ── 📱 NÚT ĐIỀU KHIỂN MOBILE — đè lên canvas khi bật chế độ Mobile ── */
 #mobileUI {

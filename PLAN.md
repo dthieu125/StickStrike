@@ -736,6 +736,11 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   sàn đáy liền, spawn `A`/`B`. Chặn file hỏng: JSON sai, thiếu `rows`, ký tự lạ, ngoài
   12-40 hàng / 20-160 cột, file > 300KB; tự bỏ hazard/cây sai, tự thêm spawn mặc định
   nếu thiếu; tên map lọc HTML + gộp khoảng trắng
+- [x] **Fix hiển thị chồng khung**: CSS thiếu luật ẩn chung cho class `.hidden` → cả 4 khung
+  hộp thoại (đường ngắm + trang phục + NPC + thiết bị) hiện cùng lúc. Thêm
+  `.hidden { display:none !important }` — mỗi hộp thoại chỉ hiện đúng khung của mục đang
+  chọn; panel DM và nút mạng cũng ẩn/hiện đúng như thiết kế. menu_click_test kiểm tra
+  mở Đường ngắm → 3 khung còn lại phải ẩn
 - [x] **134/134 test logic PASS ×3** (5 test mới: map mẫu hợp lệ · import lưu/đọc lại/xoá
   · chặn file hỏng + spawn mặc định · map tự tạo nạp Level đúng + sàn đáy đặc + spawn
   từ `spawns.A` · xuất→nhập giữ kích thước + map sinh bằng `build()` vẫn xuất được) +

@@ -103,6 +103,10 @@ canvas#game {
 }
 .screen.hidden { display: none; }
 
+/* Ẩn chuẩn cho MỌI thứ có class .hidden — khung hộp thoại, panel DM, màn phụ...
+ * (trước đây thiếu luật này nên các khung .set-pane chồng nhau hiện cùng lúc) */
+.hidden { display: none !important; }
+
 /* ── 🗺️ BẢN ĐỒ CHỌN ĐƯỜNG (roguelite) — panel KHÔNG chặn chuột lên canvas,
  *    chỉ các THẺ bấm được; game vẫn hiện phía sau để người chơi thấy tình trạng máu ── */
 #nodePanel {

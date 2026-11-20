@@ -762,6 +762,22 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   thật qua 3 bậc). File JSON nằm ở `my_maps/stickstrike1.json` — Import qua
   🗺️ BẢN ĐỒ CỦA TÔI → 📥 NHẬP MAP (.json) là chơi ngay
 
+### 🌉 GĐ 28 — map 2 "CẦU ĐÔI — GÓC BẮN CHÉO" (`my_maps/stickstrike2.json`)
+
+- [x] **7 nguyên tắc thiết kế** áp dụng cho map mới: ① 3 tầng (mặt đất / cầu giữa /
+  tháp canh) ② đa đường đi (2 vòng sát mép + 2 dốc vào cầu) ③ che chắn SO LE tạo góc
+  bắn chéo, không bunker chết ④ mỗi điểm mạnh có ≥2 lối ra ⑤ bậc ≤4 ô (≤96px < 154px
+  nhảy đơn) ⑥ đối xứng trái-phải cho công bằng deathmatch ⑦ hazard có chủ đích
+- [x] **Cấu trúc**: hầm spawn 2 đầu (mái + vách, 2 lối ra) · 4 cụm che mặt đất đối xứng ·
+  **nhịp cầu đôi hở 2 ô giữa** (nhảy qua / rơi xuống thoát hiểm) · **tháp canh hàng 9**
+  cao nhất, che đầu chính giữa nhưng hai bên vẫn có lối bắn · sân thượng 2 bên có tường
+  che ngang ngực (ngồi/nằm kín)
+- [x] **2 hazard có chủ đích**: ống ga giữa map (phạt đứng chết một chỗ) + cột điện
+  cánh phải (c ĐI GIÀN hàng 18 để né) — đều kiểm tra được chỗ trống 2 ô bên trên
+- [x] **140/140 test logic PASS** (3 test mới: map hợp lệ + đối xứng + 2 hazard dựng được;
+  BFS 4 điểm mạnh về sàn; mô phỏng nhảy thật từ ngoài hầm lên giàn hàng 18). File
+  `my_maps/stickstrike2.json` import qua 🗺️ BẢN ĐỒ CỦA TÔI → 📥 NHẬP MAP (.json)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -812,7 +828,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-27 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP) — 137/137 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-28 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP · map CẦU ĐÔI) — 140/140 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

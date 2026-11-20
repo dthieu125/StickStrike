@@ -777,6 +777,11 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
 - [x] **140/140 test logic PASS** (3 test mới: map hợp lệ + đối xứng + 2 hazard dựng được;
   BFS 4 điểm mạnh về sàn; mô phỏng nhảy thật từ ngoài hầm lên giàn hàng 18). File
   `my_maps/stickstrike2.json` import qua 🗺️ BẢN ĐỒ CỦA TÔI → 📥 NHẬP MAP (.json)
+- [x] **GĐ 28b — làm thưa bậc thềm theo feedback**: bỏ hẳn giàn hàng 18, gộp 4 nhịp
+  cầu nhỏ thành **2 nhịp DÀI**, gộp 2 dốc tháp thành 1, gộp dốc 2 bên thành 1 dốc
+  giữa → giàn chỉ còn **6 hàng** (9/11/12/13/16/17), các hàng **14/15/18 để trống**.
+  Khoảng cách bậc tăng lên 3-4 ô (≤128px < 154px nhảy đơn) → trống trải hơn nhưng
+  vẫn leo được; test chặn hồi tụt (hàng 14/15/18 phải trống, ≤7 hàng có giàn)
 
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;

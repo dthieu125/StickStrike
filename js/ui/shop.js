@@ -60,9 +60,9 @@ window.Shop = {
       'Khách quan ơi, cần mua gì?',
       'Bổn tiệm có rất nhiều đồ quý giá, sịn xò con bò!',
       'Đồ bổn tiệm chính hãng 100%, bắn phát nghe liền!',
-      'Coi kỹ trước khi mua, mua rồi khỏi đổi đổi hả!',
+      'Coi kỹ trước khi mua, mua rồi khỏi đổi nha!',
       'Hàng mới về nè khách, sịn xò lông ngỗng!',
-      'Giữa trống chưa ai ghé... khách vào coi đồ đi!',
+      'Sáng giờ chưa ai ghé... khách vào coi đồ đi!',
     ],
     happy: [
       'Quý khách thật có con mắt tinh tường!',
@@ -72,13 +72,13 @@ window.Shop = {
     ],
     angry: [
       'Nghèo mà bày đặt vào tiệm mua đồ!',
-      'Không đủ tiền mà đòi mua? Về cày đi rồi hả!',
+      'Không đủ tiền mà đòi mua? Về cày đi rồi ghé! hứ!',
       'Tay súng thì đẹp, túi thì rỗng không... hức!',
       'Bổn tiệm KHÔNG bán chịu! Bố già cũng phải ăn!',
     ],
     sad: [
       'Sáng giờ chưa ai mở hàng! Chán ghê!',
-      'Tiệm ế chỏng như lô gà... ông già tui buồn ghê lắm',
+      'Tiệm ế chỏng như lông gà... ông già tui buồn ghê lắm',
       'Rồi tiệm này còn mở nổi không nữa đây...',
     ],
     encourage: [

@@ -746,6 +746,22 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   từ `spawns.A` · xuất→nhập giữ kích thước + map sinh bằng `build()` vẫn xuất được) +
   menu_click_test kiểm tra mở/OK/HUỶ hộp thoại (HUỶ trả lại độ dày + mức NPC, OK mới lưu)
 
+### 🏭 GĐ 27 — map tự thiết kế "KHO THÉP — ẨN NÚP & BẮN TỈA" (`my_maps/stickstrike1.json`)
+
+- [x] Sửa file map mẫu thành map chơi được: lưới **60×24 ô (1920×768px)**, sàn **liền mạch
+  không hố**, 2 bên có **hầm ẩn núp** (mái + vách, cửa mở về giữa), chướng ngại mặt đất
+  cao **2-4 ô** (≤128px — vẫn nhảy đơn lên được), lối đi rộng giữa các khối
+- [x] **3 điểm ngắm sniper**: trái (hàng 12, cols 5-13) · giữa (hàng 10, cols 27-33,
+  cao nhất — nhìn toàn map) · phải (hàng 12, cols 46-54); mỗi điểm có tường che ngang
+  ngực (ngồi/nằm là kín) + giàn giáo một chiều nối liền
+- [x] **Cầu thang nhảy lên được thật**: mỗi bậc cách bậc trước ≤4 ô (96px < 154px nhảy
+  đơn), có bậc nối row18 → row15 → row12 ở 2 bên và row19 → row16 → row13 → row10 ở
+  giữa. Test mô phỏng **vật lý Player.update thật** nhảy từ sàn lên điểm ngắm hàng 12
+- [x] Tăng **137/137 test logic PASS** (3 test mới: map hợp lệ + sàn liền + obstacle ≤
+  4 ô + spawn 2 đội; BFS kiểm tra mọi điểm ngắm có đường nhảy về sàn; mô phỏng nhảy
+  thật qua 3 bậc). File JSON nằm ở `my_maps/stickstrike1.json` — Import qua
+  🗺️ BẢN ĐỒ CỦA TÔI → 📥 NHẬP MAP (.json) là chơi ngay
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -796,7 +812,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-26 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt dạng danh sách OK/HUỶ · BẢN ĐỒ CỦA TÔI) — 134/134 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-27 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP) — 137/137 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

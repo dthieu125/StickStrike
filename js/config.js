@@ -7,6 +7,18 @@ window.Config = {
   CANVAS_W: 1280,
   CANVAS_H: 720,
 
+  /* ── 🪟 KHUNG NHÌN CO GIÃN THEO CỬA SỔ ──
+   * Kéo cửa sổ rộng ra → thấy nhiều map hơn theo chiều ngang; map được
+   * NỚI THÊM ở hai bên (Level.refit) để không lộ khoảng trống.
+   * Chiều cao thế giới giữ nguyên 720px, bề ngang tính theo tỉ lệ cửa sổ. */
+  VIEW: {
+    MIN_W: 1024,     // hẹp nhất (cửa sổ dọc / mobile) — đủ chỗ cho bảng Cửa Hàng 960px
+    MAX_W: 2880,     // rộng nhất (ultrawide) — chặn map phình vô hạn
+    MIN_ASPECT: 1.25,
+    MAX_ASPECT: 3.2,
+    SIDE_ROOM: 640,  // map rộng hơn khung nhìn ít nhất chừng này (2 bên cộng lại)
+  },
+
   // Kích thước 1 ô tilemap (px)
   TILE: 32,
 

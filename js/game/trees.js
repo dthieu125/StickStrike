@@ -17,11 +17,13 @@ window.Trees = {
    * Cây mọc trên mặt đất thấp nhất của cột đó (tự dò xuống tìm sàn). */
   spawnForMap(mapDef) {
     this.clear();
+    const dc = Level.colOffset || 0; // 🪟 map được nới 2 bên → cột dời theo
     for (const t of (mapDef.trees || [])) {
+      const c = t.c + dc;
       const h = t.h * Level.T;
       this.list.push({
-        x: t.c * Level.T + Level.T / 2,  // tâm thân
-        baseY: this._baseYAt(t.c),       // mặt đất chỗ cây đứng
+        x: c * Level.T + Level.T / 2,  // tâm thân
+        baseY: this._baseYAt(c),       // mặt đất chỗ cây đứng
         h,
         hp: 70 + t.h * 4, maxHp: 70 + t.h * 4, // cây to trâu hơn chút
         gone: false,                     // nổ tan xác → không vẽ gì nữa

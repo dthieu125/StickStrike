@@ -13,8 +13,9 @@ html, body {
 
 .game-wrap {
   position: relative;
-  /* trừ thêm ~70px cho thanh hàng súng dưới canvas — tổng không vượt màn hình */
-  width: min(100vw, calc((100vh - 70px) * (16 / 9)));
+  /* trừ thêm ~70px cho thanh hàng súng dưới canvas — tổng không vượt màn hình.
+   * --gw-aspect do main.js cập nhật theo tỉ lệ cửa sổ (kéo ngang → map rộng ra). */
+  width: min(100vw, calc((100vh - 70px) * var(--gw-aspect, 1.7778)));
 }
 
 canvas#game {

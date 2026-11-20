@@ -287,14 +287,16 @@ window.Market = {
   /* ═════════ VẼ TIỆM (mỗi frame khi mở) ═════════ */
   updateAndDraw(ctx, mouse) {
     const W = 960, H = 600;
-    const x0 = (Config.CANVAS_W - W) / 2;
-    const y0 = (Config.CANVAS_H - H) / 2 - 10;
+    const CW = (ctx.canvas && ctx.canvas.width) || Config.CANVAS_W;   // 🪟 khung nhìn co giãn
+    const CH = (ctx.canvas && ctx.canvas.height) || Config.CANVAS_H;
+    const x0 = (CW - W) / 2;
+    const y0 = (CH - H) / 2 - 10;
     this.rows = [];
     const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() / 1000 : 0;
 
     // nền mờ toàn màn + panel
     ctx.fillStyle = 'rgba(3,6,12,0.72)';
-    ctx.fillRect(0, 0, Config.CANVAS_W, Config.CANVAS_H);
+    ctx.fillRect(0, 0, CW, CH);
     const bg = ctx.createLinearGradient(x0, y0, x0, y0 + H);
     bg.addColorStop(0, 'rgba(20,26,20,0.98)');
     bg.addColorStop(1, 'rgba(12,16,12,0.98)');

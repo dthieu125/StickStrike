@@ -22,25 +22,28 @@ window.Hazards = {
    * Ô cột phải TRỐNG 2 ô ngay trên mặt đất (ống cao 46px) — không cắm vào bê tông! */
   spawnForMap(mapDef) {
     this.clear();
+    const dc = Level.colOffset || 0; // 🪟 map nới 2 bên → cột hazard dời theo
     const clearAbove = (c, baseY) => {
       const r0 = baseY / Level.T - 1;
       return Level.tileAt(c, r0) === '.' && Level.tileAt(c, r0 - 1) === '.';
     };
     for (const h of (mapDef.hazards || [])) {
-      const floorY = this._floorTop(h.c);
-      if (floorY >= Level.pxH || !clearAbove(h.c, floorY)) continue; // cột không có chỗ trống → bỏ qua
+      const c = h.c + dc;
+      const floorY = this._floorTop(c);
+      if (floorY >= Level.pxH || !clearAbove(c, floorY)) continue; // cột không có chỗ trống → bỏ qua
       if (h.kind === 'gas') {
         this.list.push({
-          kind: 'gas', x: h.c * Level.T + Level.T / 2, y: floorY,
+          kind: 'gas', x: c * Level.T + Level.T / 2, y: floorY,
           t: Math.random() * 2,          // lệch pha giữa các ống cho đỡ đồng loạt
           dmgT: 0,                        // đồng hồ tick sát thương 0.5s
           active: false,                  // đang phóng mây không?
         });
       } else if (h.kind === 'zap' && h.c2 != null) {
-        const floorY2 = this._floorTop(h.c2);
-        if (floorY2 >= Level.pxH || !clearAbove(h.c2, floorY2)) continue;
+        const c2 = h.c2 + dc;
+        const floorY2 = this._floorTop(c2);
+        if (floorY2 >= Level.pxH || !clearAbove(c2, floorY2)) continue;
         this.list.push({
-          kind: 'zap', x1: h.c * Level.T + Level.T / 2, x2: h.c2 * Level.T + Level.T / 2,
+          kind: 'zap', x1: c * Level.T + Level.T / 2, x2: c2 * Level.T + Level.T / 2,
           y1: floorY, y2: floorY2,
           t: Math.random() * 1,           // lệch pha
           prevPh: 0, struck: false,       // đã trúng đòn đợt phóng này chưa

@@ -162,7 +162,10 @@ window.Pickups = {
     // ── 2. Chọn điểm: tôn trọng khoảng cách tối thiểu, né chỗ spawn 2 đội ──
     // 🔫 súng ĐỘC QUYỀN chợ (Gatling...) KHÔNG rải trên map — mua ở 🏪 Market
     const guns = Weapons.list.filter((w) => w.id !== 'pistol' && !w.marketOnly); // 9 khẩu rải
-    const avoid = mapDef.spawns ? [...mapDef.spawns.A, ...mapDef.spawns.B] : [];
+    const ox = Level.offsetX || 0; // 🪟 map nới 2 bên → điểm spawn dời theo
+    const avoid = mapDef.spawns
+      ? [...(mapDef.spawns.A || []), ...(mapDef.spawns.B || [])].map((s) => [s[0] + ox, s[1]])
+      : [];
     const SPAWN_CLEAR = 150; // súng cách điểm xuất phát ít nhất 150px
 
     let chosen = [];

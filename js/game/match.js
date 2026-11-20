@@ -44,7 +44,8 @@ window.Match = {
   spawnPoint(team) {
     const arr = this.mapDef.spawns[team];
     const s = arr[Math.floor(Math.random() * arr.length)];
-    return { x: s[0], y: s[1] };
+    // 🪟 map được nới 2 bên → dời điểm spawn theo
+    return { x: s[0] + (Level.offsetX || 0), y: s[1] };
   },
 
   /* đủ điểm thắng chưa? → kết thúc + hiện bảng kết quả (gọi từ onKill lẫn khi người gục) */

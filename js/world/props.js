@@ -33,9 +33,10 @@ window.Props = {
     if (!spots.length) return 0;
     // tránh chỗ xuất phát của 2 đội (cả wave lẫn DM)
     const avoid = [];
+    const ox = Level.offsetX || 0; // 🪟 map nới 2 bên → điểm spawn dời theo
     const sp = mapDef.spawns || {};
     for (const arr of [sp.A, sp.B, sp.wave, ...(Array.isArray(sp) ? [sp] : [])]) {
-      if (Array.isArray(arr)) for (const s of arr) avoid.push(s);
+      if (Array.isArray(arr)) for (const s of arr) avoid.push([(s[0] || s.x) + ox, s[1] || s.y]);
     }
     let tries = 0;
     // 3 vật đầu ép đủ 3 LOẠI (đảm bảo map nào cũng có đủ thùng nổ/gỗ/ống ga), còn lại random

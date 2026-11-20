@@ -5,8 +5,8 @@
 (function () {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  const viewW = Config.CANVAS_W;
   const viewH = Config.CANVAS_H;
+  let viewW = Config.CANVAS_W; // 🪟 tính lại theo tỉ lệ cửa sổ bên dưới
 
   let mode = 'menu'; // 'menu' | 'wave' | 'dm'
   let paused = false;
@@ -15,6 +15,90 @@
   let toastTimer = 0, toastText = '', errShown = false;
   let _alarmT = 0; // 🚨 đồng hồ CÒI BÁO ĐỘNG hazard (wave >= ALARM_AT)
   let time = 0;
+
+  /* ═════════ 🪟 KHUNG NHÌN CO GIÃN THEO CỬA SỔ ═════════
+   * Cửa sổ càng rộng (tỉ lệ ngang) → khung nhìn thế giới càng rộng.
+   * Level.load/refit đắp thêm cột ở 2 bên map để không lộ khoảng trống,
+   * spawn/hazard/cây cũng dời theo nên mọi thứ vẫn khớp. */
+  function _viewWanted() {
+    const V = Config.VIEW || {};
+    const ww = window.innerWidth || Config.CANVAS_W;
+    const wh = window.innerHeight || Config.CANVAS_H;
+    const ar = Math.max(V.MIN_ASPECT || 1.25,
+      Math.min(V.MAX_ASPECT || 3.2, ww / Math.max(1, wh)));
+    return Math.max(V.MIN_W || 1024, Math.min(V.MAX_W || 2880, Math.round(viewH * ar)));
+  }
+
+  function _applyCanvasSize() {
+    if (canvas.width !== viewW) canvas.width = viewW;
+    if (canvas.height !== viewH) canvas.height = viewH;
+    const wrap = document.querySelector('.game-wrap');
+    if (wrap) wrap.style.setProperty('--gw-aspect', String(viewW / viewH));
+  }
+
+  /* Dời toàn bộ thực thể theo dx khi map được nới/thu 2 bên */
+  function _shiftWorld(dx) {
+    if (!dx) return;
+    const mv = (arr) => { for (const o of arr) if (o && typeof o.x === 'number') o.x += dx; };
+    mv(Player.list); mv(Bots.list); mv(Monsters.list);
+    mv(Pickups.list); mv(Pickups.health); mv(Trees.list);
+    if (window.Props) mv(Props.list);
+    mv(Particles.list);
+    for (const b of Bullets.projectiles) b.x += dx;
+    for (const t of Bullets.tracers) { t.x1 += dx; t.x2 += dx; }
+    if (window.Hazards) {
+      for (const h of Hazards.list) {
+        if (h.kind === 'zap') { h.x1 += dx; h.x2 += dx; }
+        else h.x += dx;
+      }
+    }
+    for (const b of Bots.list) {
+      if (typeof b.roamX === 'number') b.roamX += dx;
+      if (typeof b.lastEnemyX === 'number') b.lastEnemyX += dx;
+    }
+    // map thu hẹp → kẹp người chơi trong biên mới (khỏi quấn sang mép kia)
+    const clampX = (e) => {
+      if (e && typeof e.x === 'number' && typeof e.w === 'number') {
+        e.x = Math.max(0, Math.min(Level.pxW - e.w, e.x));
+      }
+    };
+    for (const pl of Player.list) clampX(pl);
+    for (const b of Bots.list) clampX(b);
+    for (const sp of (Wave.spawnPoints || [])) if (Array.isArray(sp)) sp[0] += dx;
+    Camera.x += dx;
+    Level.camX += dx;
+  }
+
+  let _refitTimer = 0;
+  /* 🌐 guest: nhận khung nhìn của host → dùng đúng để map 2 máy GIỐNG NHAU */
+  function _syncNetView(w) {
+    if (!w) return;
+    const V = Config.VIEW || {};
+    viewW = Math.max(V.MIN_W || 1024, Math.min(V.MAX_W || 2880, w | 0));
+    _applyCanvasSize();
+  }
+
+  /* Áp bề rộng mới vào map (gọi sau khi người chơi ngừng kéo cửa sổ) */
+  function _refitView() {
+    const netGuest = window.Net && Net.mode === 'guest' && mode !== 'menu';
+    const dx = Level.refit(viewW);
+    if (mode !== 'menu' && dx) _shiftWorld(dx);
+    // 🌐 host đổi cỡ cửa sổ → báo guest dùng đúng khung nhìn (map 2 máy giống nhau)
+    if (!netGuest && window.Net && Net.mode === 'host' && Net.peer && mode !== 'menu') {
+      Net.send({ t: 'view', w: viewW });
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    // guest đang trong trận: khung nhìn do host quyết định (tránh lệch map)
+    if (window.Net && Net.mode === 'guest' && mode !== 'menu') return;
+    const nw = _viewWanted();
+    if (nw === viewW) return;
+    viewW = nw;
+    _applyCanvasSize();
+    clearTimeout(_refitTimer);
+    _refitTimer = setTimeout(_refitView, 130);
+  });
 
   /* ============ API cho menu (DOM) gọi vào ============ */
   window.Game = {
@@ -35,14 +119,16 @@
         // 🔧 Player.create gán Player.obj = người MỚI NHẤT — phải trả về NGƯỜI 1
         // (không thì host update nhầm người 2, người 1 đóng băng, input đè nhau!)
         Player.obj = Player.list[0];
-        Net.send({ t: 'start', mapId: mapDef.id }); // gửi đúng map đang chọn
+        Net.send({ t: 'start', mapId: mapDef.id, vw: viewW }); // gửi đúng map + khung nhìn đang chọn
       }
       Pickups.spawnForMap(mapDef, false); // rải SÚNG cả map wave — lụm bằng G như DM (không rải túi máu, máu mua ở cửa hàng)
       Props.spawnForMap(mapDef); // 🛢️ vật thể phá được — chỉ chế độ Sinh tồn (vàng rơi chỉ nghiêng về wave)
       if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện — đọc từ mapDef
       // 👹 quái trồi tại các điểm spawn CỦA MAP (mặc định: bộ điểm của Boong tàu)
       const sp = mapDef.spawns;
-      Wave.spawnPoints = (sp && sp.A) ? [...sp.A, ...sp.B] : Config.WAVE.SPAWNS;
+      Wave.spawnPoints = (sp && sp.A)
+        ? [...sp.A, ...sp.B].map((s) => [s[0] + Level.offsetX, s[1]]) // 🪟 dời theo map nới
+        : Config.WAVE.SPAWNS;
       Wave.start();
       Menu.hideAll();
       AudioFX.startMusic();
@@ -58,7 +144,7 @@
       // bạn đứng vào đội hình đội A (điểm spawn đầu tiên của đội)
       // chỉ có SÚNG LỤC — 9 khẩu còn lại rải trên map, đi lụm bằng G
       const sp = mapDef.spawns.A[0];
-      Player.create({ x: sp[0], y: sp[1] - 52 }, 'A', ['pistol']);
+      Player.create({ x: sp[0] + Level.offsetX, y: sp[1] - 52 }, 'A', ['pistol']);
       Pickups.spawnForMap(mapDef);
       Trees.spawnForMap(mapDef); // map rừng → dựng cây phá được (map khác không có cây)
       if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện — đọc từ mapDef
@@ -77,7 +163,7 @@
       mapDef = Maps.colosseum;
       _setupLevel(mapDef);
       const sp = mapDef.spawns.A[0]; // góc trái — bot đỏ spawn DÃI khắp map rộng
-      Player.create({ x: sp[0], y: sp[1] - 52 }, 'A', ['pistol']);
+      Player.create({ x: sp[0] + Level.offsetX, y: sp[1] - 52 }, 'A', ['pistol']);
       Pickups.spawnForMap(mapDef);   // súng rải map — lụm bằng G
       Trees.spawnForMap(mapDef);     // (colosseum không cây — không sao)
       if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ ống ga / cột điện
@@ -102,8 +188,8 @@
       _setupLevel(mapDef);
       // MÁY HOST = ĐỘI A (xanh lá) · MÁY GUEST = ĐỘI B (đỏ) — mỗi đội 1 người thật
       const spA = mapDef.spawns.A[0], spB = mapDef.spawns.B[0];
-      Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
-      Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
+      Player.create({ x: spA[0] + Level.offsetX, y: spA[1] - 52 }, 'A', ['pistol']);
+      Player.create({ x: spB[0] + Level.offsetX, y: spB[1] - 52 }, 'B', ['pistol'], 1);
       Player.list[1].color = '#f43f5e'; // bạn 2 = ĐỘI B → áo ĐỎ (dù host chọn màu gì)
       Player.obj = Player.list[0]; // 🔧 host = ĐỘI A (người 1) — create gán obj = người mới nhất
       Net.initRemoteInp();            // input ẢNH của bạn 2 bắt đầu từ số 0
@@ -112,7 +198,7 @@
       Trees.spawnForMap(mapDef);      // cây dựng từ mapDef — 2 máy tự dựng GIỐNG nhau
       if (window.Hazards) Hazards.spawnForMap(mapDef); // ☠️ hazard — 2 máy tự dựng GIỐNG nhau (cùng mapDef)
       Match.start(mapDef, Config.DM.TEAM_SIZE - 1); // mỗi đội bớt 1 bot (slot đó là NGƯỜI THẬT)
-      Net.send({ t: 'start-dm', mapId, teamSize: Config.DM.TEAM_SIZE, winKills: Config.DM.WIN_KILLS });
+      Net.send({ t: 'start-dm', mapId, teamSize: Config.DM.TEAM_SIZE, winKills: Config.DM.WIN_KILLS, vw: viewW });
       Menu.hideAll();
       AudioFX.startMusic();
       showToast('⚔️ BẠN (ĐỘI A xanh) vs BẠN 2 (ĐỘI B đỏ) — ' + Config.DM.WIN_KILLS + ' kill thắng!');
@@ -136,8 +222,8 @@
     },
   };
 
-  function _setupLevel(def) {
-    Level.load(def);
+  function _setupLevel(def, forceViewW) {
+    Level.load(def, forceViewW || viewW);
     Bullets.clear();
     Monsters.clear();
     Bots.clear();
@@ -159,6 +245,7 @@
     AudioFX.ensure();
     mode = 'wave'; paused = false;
     mapDef = Maps[m.mapId] || Maps.deck;
+    _syncNetView(m.vw);          // 🪟 cùng khung nhìn với host
     _setupLevel(mapDef);
     // 2 entity người que ĐỂ VẼ: số 1 là đồng đội, số 2 là MÌNH (snapshot host sẽ ghi đè dữ liệu)
     Player.create(Level.spawn, 'P', false);
@@ -184,13 +271,14 @@
     AudioFX.ensure();
     mode = 'dm'; paused = false;
     mapDef = Maps[m.mapId] || Maps.deck;
+    _syncNetView(m.vw);          // 🪟 cùng khung nhìn với host
     _setupLevel(mapDef);
     if (m.teamSize) Config.DM.TEAM_SIZE = m.teamSize;   // nhận cấu hình từ máy host
     if (m.winKills) Config.DM.WIN_KILLS = m.winKills;
     // 2 entity người que ĐỂ VẼ — THỨ TỰ PHẢI KHỚP host: số 1 đội A (địch), số 2 = MÌNH đội B
     const spA = mapDef.spawns.A[0], spB = mapDef.spawns.B[0];
-    Player.create({ x: spA[0], y: spA[1] - 52 }, 'A', ['pistol']);
-    Player.create({ x: spB[0], y: spB[1] - 52 }, 'B', ['pistol'], 1);
+    Player.create({ x: spA[0] + Level.offsetX, y: spA[1] - 52 }, 'A', ['pistol']);
+    Player.create({ x: spB[0] + Level.offsetX, y: spB[1] - 52 }, 'B', ['pistol'], 1);
     Player.obj = Player.list[1]; // 🔧 máy guest = ĐỘI B (người 2 — chỉ để vẽ + đọc snapshot)
     Net._guestColor = Player.obj.color; // giữ MÀU ÁO mình chọn (snapshot host sẽ đè, khôi phục sau)
     Trees.spawnForMap(mapDef);          // cây dựng từ mapDef — giống hệt máy host
@@ -323,6 +411,12 @@
       switch (m.t) {
         case 'start': _guestStart(m); break; // host bắt đầu trận co-op
         case 'start-dm': _guestStartDM(m); break; // ⚔️ host bắt đầu trận ĐỐI ĐẦU
+        case 'view': { // 🪟 host kéo cửa sổ → guest dùng cùng khung nhìn, map không lệch
+          _syncNetView(m.w);
+          const dx = Level.refit(viewW);
+          if (dx) _shiftWorld(dx);
+          break;
+        }
         case 'snap': Net.snap = m; break;    // "ảnh chụp" thế giới — tickGuest sẽ áp
       }
     }
@@ -957,7 +1051,9 @@
   Nodes.init();               // 🗺️ bảng chọn đường roguelite (ẩn mặc định)
   if (window.Mobile) Mobile.init(); // 📱 chọn thiết bị (máy cảm ứng → tự bật mobile)
   if (window.Net) Net.onMsg = _netMsg; // 🌐 mạng LAN: bộ phân tin nhắn 2 máy
-  Level.load(Maps.deck);      // map nền cho menu
+  viewW = _viewWanted();                    // 🪟 khung nhìn theo tỉ lệ cửa sổ hiện tại
+  _applyCanvasSize();
+  Level.load(Maps.deck, viewW);      // map nền cho menu (nới theo khung nhìn)
   Menu.init(window.Game);
   Menu.show('menu');
   GameLoop.start(update, render);

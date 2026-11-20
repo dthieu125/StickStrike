@@ -783,6 +783,28 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   Khoảng cách bậc tăng lên 3-4 ô (≤128px < 154px nhảy đơn) → trống trải hơn nhưng
   vẫn leo được; test chặn hồi tụt (hàng 14/15/18 phải trống, ≤7 hàng có giàn)
 
+### 🪟 GĐ 29 — KHUNG NHÌN CO GIÃN THEO CỬA SỔ (map nới 2 bên)
+
+- [x] **Khung nhìn theo tỉ lệ cửa sổ**: chiều cao thế giới giữ 720px, bề ngang
+  `viewW` tính từ `innerWidth/innerHeight` (kẹp `MIN_ASPECT 1.25` … `MAX_ASPECT 3.2`,
+  `MIN_W 1024` … `MAX_W 2880`). Canvas + CSS `.game-wrap` đổi tỉ lệ theo
+  biến `--gw-aspect` nên kéo cửa sổ ngang là thấy thêm map, không bị viền đen
+- [x] **Map tự nới 2 bên** (`Level.load(def, viewW)` + `Level.refit(viewW)`): đắp thêm
+  cột bằng cách **lặp ô mép** (cột 0 bên trái, cột cuối bên phải) → sàn/kệ liền mạch,
+  không lộ khoảng trống; map nhỏ chỉ nới khi `viewW + SIDE_ROOM(640)` vượt bề rộng gốc,
+  đắp gần đối xứng (lệch ≤1 ô), map vẫn **vòng tròn** (wrap giữ nguyên)
+- [x] **Mọi toạ độ dời theo map**: spawn người/quái (`Level.offsetX`), cột hazard/cây
+  (`Level.colOffset`), glows, điểm rải súng/đồ tránh spawn — test xác nhận không lệch
+- [x] **Kéo cửa sổ giữa trận**: `Level.refit` trả `dx` → `_shiftWorld(dx)` dời người,
+  bot, quái, đạn, vệt đạn, pickup, máu, cây, props, hazard, `Wave.spawnPoints`, camera,
+  giữ vết máu; debounce 130ms cho mượt
+- [x] **LAN không lệch map**: host gửi `vw` trong `start`/`start-dm` và tin `view` khi
+  đổi cỡ cửa sổ; guest dùng đúng khung nhìn host, tự refit cùng padding
+- [x] **Shop/Market** căn giữa theo kích thước canvas thật (không còn lệch trên màn rộng)
+- [x] **146/146 test logic PASS** (6 test mới: hẹp 1280 giữ nguyên 60 cột; ultrawide
+  2400 nới 2 bên + mép lặp liền; spawn/glows/hazard dời đúng; refit rộng↔hẹp trả dx;
+  đứng được trên sàn đắp thêm; map CẦU ĐÔI rộng vẫn đủ 2 hazard + spawn đúng)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -833,7 +855,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-28 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP · map CẦU ĐÔI) — 140/140 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-29 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP · map CẦU ĐÔI · khung nhìn co giãn theo cửa sổ) — 146/146 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

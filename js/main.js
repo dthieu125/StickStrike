@@ -209,6 +209,7 @@
     },
     toMenu() {
       mode = 'menu'; paused = false;
+      if (window.Stats) Stats.stop(); // 📊 thoát giữa trận: không cộng vào tổng
       if (window.Mobile) { Mobile._resetTouch(); Mobile.setVisible(false); } // 📱 tắt nút cảm ứng + xoá phím ma
       Wave.reset(); Match.reset();
       Monsters.clear(); Bots.clear(); Bullets.clear();
@@ -224,6 +225,8 @@
 
   function _setupLevel(def, forceViewW) {
     Level.load(def, forceViewW || viewW);
+    if (window.Stats) Stats.start(mode); // 📊 bắt đầu đo thống kê trận mới
+    if (window.Achievements) Achievements.pending = []; // 🏆 bỏ thông báo mở khóa của trận trước
     Bullets.clear();
     Monsters.clear();
     Bots.clear();
@@ -1047,6 +1050,11 @@
 
   /* ── Khởi động ── */
   Market.init();              // nạp ví vàng + trang bị đã lưu (🏪 Market)
+  if (window.Stats) Stats.load();                 // 📊 tổng thống kê dài hạn
+  if (window.Achievements) {                      // 🏆 thành tựu đã mở
+    Achievements.load();
+    Achievements.syncGold();                      // đồng bộ mốc vàng từ ví
+  }
   KeySettings.init();         // nạp phím đã đổi (⌨️ PHÍM CHỨC NĂNG)
   Nodes.init();               // 🗺️ bảng chọn đường roguelite (ẩn mặc định)
   if (window.Mobile) Mobile.init(); // 📱 chọn thiết bị (máy cảm ứng → tự bật mobile)

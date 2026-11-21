@@ -805,6 +805,31 @@ Nguyên tắc: **mỗi file một việc rõ ràng**, số liệu game nằm tro
   2400 nới 2 bên + mép lặp liền; spawn/glows/hazard dời đúng; refit rộng↔hẹp trả dx;
   đứng được trên sàn đắp thêm; map CẦU ĐÔI rộng vẫn đủ 2 hazard + spawn đúng)
 
+### 🏆 GĐ 30 — THÀNH TỰU + 📊 THỐNG KÊ SAU TRẬN
+
+- [x] **Panel 🏆 THÀNH TỰU trong menu**: nút mới ở nhóm công cụ; mỗi mốc có icon,
+  mô tả, thanh tiến độ `hiện tại/mốc`, phần trăm + nhãn ✅ khi đã mở. Lưu vĩnh viễn ở
+  `localStorage['ss_achievements']`; mở khóa → toast + tiếng chime
+- [x] **4 mốc chính**: 🎯 *Xạ thủ bậc thầy* (50 headshot trong **một** trận) · 💣 *Kẻ hủy diệt*
+  (phá 20 thùng/cây, cộng dồn) · 🛡️ *Bất bại* (dọn tới Wave 10 mà **không gục lần nào**;
+  gục giữa chừng thì mất chuỗi) · 💰 *Triệu phú vũ trụ* (tích lũy 20,000 vàng, đọc trực
+  tiếp từ `Gold.earned`). Giữ 2 mốc cũ: 👑 *Săn trùm vũ trụ* (3 boss/boss nhỏ) và
+  🤝 *Đồng đội tin cậy* (cứu co-op)
+- [x] **Bảng 📊 THỐNG KÊ cuối trận** (màn GAME OVER + KẾT THÚC ĐỐI ĐẦU): độ chính xác %
+  kèm thanh bar + `trúng/tổng phát`, tổng sát thương, headshot, hạ gục, vật thể phá,
+  vàng kiếm, **súng dùng nhiều nhất** (tên + số phát); hiện thêm số lần gục nếu có.
+  Kèm khối 🏆 "thành tựu mới mở khóa" ngay dưới bảng
+- [x] **Module tách riêng**: `js/game/stats.js` (tracker theo trận + tổng vĩnh viễn
+  `ss_stats`) và `js/ui/achievements.js` (định nghĩa + UI + lưu). Hook tập trung ở
+  `Bullets` (phát bắn/phát trúng/sát thương/vụ nổ), `Player`/`Bot` (gục + hạ gục đấu đội),
+  `Wave` (hạ quái, dọn wave), `Props`/`Trees` (vật thể phá), `Gold` (vàng), `Menu`
+  (finish + render). Chỉ đo trên **máy chơi cục bộ** — máy guest co-op không mô phỏng
+  nên tự tắt thống kê để tránh số liệu ảo
+- [x] **155/155 test logic PASS** (9 test mới: cộng dồn/mở khóa/lưu-nạp thành tựu;
+  kỷ lục headshot chỉ tăng; accuracy + súng nhiều nhất; bắn thật vào quái ra
+  trúng/headshot/sát thương; `finish()` cộng tổng + xuất HTML; mốc 20,000 vàng;
+  hạ gục đấu đội đúng người; boss/elite tăng tiến độ; gục làm mất chuỗi Bất bại)
+
 ### 🗺️ ROADMAP — kế hoạch cải tiến của chuyên gia (còn lại, chọn dần)
 1. **Chế độ chơi mới**: ~~modifier giữa wave + quái mới~~ ✅ GĐ 8 · ~~NẰM + Market trang bị~~ ✅ GĐ 9;
        ~~boss nhỏ theo phase~~ ✅ GĐ 19
@@ -855,7 +880,7 @@ Không cần học sẵn — mỗi giai đoạn tôi sẽ giải thích đúng p
 
 ---
 
-**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-29 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP · map CẦU ĐÔI · khung nhìn co giãn theo cửa sổ) — 146/146 test logic PASS.**
+**Trạng thái: 🎉 HOÀN THÀNH GĐ 0-30 (Cửa hàng canvas · fix rơi hố · 1 vs NHIỀU · độ chính xác NPC · Cài Đặt OK/HUỶ · BẢN ĐỒ CỦA TÔI · map KHO THÉP · map CẦU ĐÔI · khung nhìn co giãn theo cửa sổ · thành tựu + thống kê sau trận) — 155/155 test logic PASS.**
 Mở `index.html` là chơi. Chơi 2 người LAN: máy chủ chạy `node server.js` → menu 🌐 2 NGƯỜI →
 TẠO PHÒNG (máy chủ) / gõ IP + VÀO PHÒNG (máy 2) → máy chủ bấm SINH TỒN (co-op)
 hoặc ĐỐI ĐẦU 1v1 (mỗi đội 1 người thật + bot đi kèm, chỉnh số bot ở menu như DM).

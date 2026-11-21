@@ -74,13 +74,17 @@ window.Player = {
         : null,                   // 🪖 TRANG BỊ RIÊNG TỪNG NGƯỜI (co-op: mỗi máy 1 bộ)
       reviveT: 0,                 // 🤝 co-op: đồng đội đang cứu (giây tích luỹ)
 
-      hit(dmg, isHead, hx, hy, shooterTeam) {
+      hit(dmg, isHead, hx, hy, shooterTeam, owner) {
         if (this.dead || this.hp <= 0) return 0;
         if (this.iframe > 0) { // 🏃 DASH né đạn: bất tử trong lúc lướt
           Particles.text(this.x + this.w / 2, this.y - 6, 'NÉ!', '#7df3ff', 11);
           return 0;
         }
         this.takeDamage(dmg, hx, isHead);
+        // ⚔️ đấu đội: người hạ gục là AI BẮN (owner) → cộng vào thống kê của họ
+        if (this.dead && window.Stats && shooterTeam && shooterTeam !== 'X' && shooterTeam !== this.team) {
+          Stats.onPlayerKill(owner);
+        }
         return dmg;
       },
       /* lưu thay đổi gear: gear của MÁY MÌNH → lưu localStorage;
@@ -130,6 +134,7 @@ window.Player = {
         if (this.hp <= 0) {
           this.hp = 0;
           this.dead = true; // wave/match sẽ xử lý tiếp
+          if (window.Stats) Stats.onDeath(this); // 💀 ghi nhận gục (thành tựu Bất bại)
         }
       },
     };
@@ -201,6 +206,7 @@ window.Player = {
     d.dashT = 0; d.dashCd = 0; d.grenCd = 0; d.spin = 0;
     d.iframe = 1.2; // bất tử 1.2s vừa sống lại — tránh chết dây chuyền
     d.reviveT = 0;
+    if (window.Achievements) Achievements.progress('revive1'); // 🏆 cứu đồng đội thành công
     Particles.poof(d.x + d.w / 2, d.y + d.h / 2);
     Particles.text(d.x + d.w / 2, d.y - 10, '🤝 ĐÃ CỨU!', '#7ef27a', 15, true);
     AudioFX._tone(300, 600, 0.25, 'triangle', 0.14);

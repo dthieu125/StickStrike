@@ -50,6 +50,7 @@
             <div class="menu-tools">
               <h3 class="group-title">🛠️ TIỆN ÍCH</h3>
               <button id="btnMarket" class="btn">🏪 CỬA HÀNG<small>mua súng · nâng cấp · trang bị bằng vàng tích luỹ</small></button>
+              <button id="btnAchievements" class="btn">🏆 THÀNH TỰU<small>mốc thử thách · thống kê dài hạn · tiến độ mở khóa</small></button>
               <button id="btnMaps" class="btn">🗺️ BẢN ĐỒ CỦA TÔI<small>tải map mẫu · nhập map tự thiết kế</small></button>
               <button id="btnSettings" class="btn">⚙️ CÀI ĐẶT<small>đường ngắm · màu áo · mũ · phím</small></button>
               <button id="btnTips" class="btn">💡 MẸO CHƠI<small>điều khiển · đạn · mẹo bazoka</small></button>
@@ -262,6 +263,18 @@
         </div>
       </div>
     </div>
+    <!-- ═══ 🏆 THÀNH TỰU & THỐNG KÊ ═══ -->
+    <div id="achievements" class="screen hidden">
+      <div class="panel market-panel">
+        <h2>🏆 THÀNH TỰU &amp; THỐNG KÊ</h2>
+        <p class="market-note">Hoàn thành các thử thách để mở khóa thành tựu vĩnh viễn. Số liệu bên dưới là tổng hợp mọi trận đã chơi.</p>
+        <div id="achSummary"></div>
+        <div id="achList" class="mymap-list"></div>
+        <div class="btn-row">
+          <button id="btnAchBack" class="btn">‹ Về menu</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ═══ MẸO CHƠI ═══ -->
     <div id="tips" class="screen hidden">
@@ -384,6 +397,7 @@
       <div class="panel">
         <h2 class="go-title" id="goTitle">💀 BẠN ĐÃ GỤC</h2>
         <p class="stats" id="goStats"></p>
+        <div id="goDetail"></div>
         <div class="btn-row">
           <button id="btnRetryWave" class="btn">🔁 Đánh lại</button>
           <button id="btnGoMenu1" class="btn danger">🏠 Về menu</button>
@@ -396,6 +410,7 @@
       <div class="panel">
         <h2 id="meTitle" class="win-title">🏆 THẮNG!</h2>
         <p class="stats" id="meStats"></p>
+        <div id="meDetail"></div>
         <div class="btn-row">
           <button id="btnRematch" class="btn">⚔️ Đấu lại</button>
           <button id="btnGoMenu2" class="btn danger">🏠 Về menu</button>
@@ -423,6 +438,7 @@
   <script src="js/entities/bot.js" defer></script>
   <script src="js/game/wave.js" defer></script>
   <script src="js/game/match.js" defer></script>
+  <script src="js/game/stats.js" defer></script>
   <script src="js/game/pickups.js" defer></script>
   <script src="js/game/trees.js" defer></script>
   <script src="js/world/props.js" defer></script>
@@ -431,6 +447,7 @@
   <script src="js/entities/player.js" defer></script>
   <script src="js/ui/shop.js" defer></script>
   <script src="js/ui/market.js" defer></script>
+  <script src="js/ui/achievements.js" defer></script>
   <script src="js/ui/keybinds.js" defer></script>
   <script src="js/ui/nodes.js" defer></script>
   <script src="js/net/net.js" defer></script>

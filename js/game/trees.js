@@ -81,6 +81,7 @@ window.Trees = {
     Particles.smoke(x, y, 1);
     if (wasStanding && t.hp <= 0) {
       // cây bị CẮT đổ — tán lá rụng tung tóe
+      if (window.Stats) Stats.onDestroy(); // 📊 đếm cây bị phá
       Particles.sparks(t.x, t.baseY - t.h * 0.7, -Math.PI / 2, 10, '#4ade80');
       Particles.sparks(t.x, t.baseY - t.h * 0.5, -Math.PI / 2, 8, '#8a5a2b');
       Particles.smoke(t.x, t.baseY - 20, 4);
@@ -96,7 +97,9 @@ window.Trees = {
       if (t.gone) continue;
       const d = Math.hypot(t.x - x, t.baseY - t.h * 0.4 - y); // ~tâm khối cây
       if (d > radius + 30) continue;
+      const wasStanding = t.hp > 0;
       t.gone = true;
+      if (wasStanding && window.Stats) Stats.onDestroy(); // 📊 chỉ đếm cây còn sống
       Particles.sparks(t.x, t.baseY - t.h * 0.5, -Math.PI / 2, 14, '#8a5a2b');
       Particles.sparks(t.x, t.baseY - t.h * 0.6, -Math.PI / 2, 12, '#4ade80');
       Particles.smoke(t.x, t.baseY - t.h * 0.3, 5);

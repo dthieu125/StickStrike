@@ -14,7 +14,7 @@ window.Menu = {
     this.game = game;
     const $ = (id) => document.getElementById(id);
     this.el = {
-      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'), settings: $('settings'), mymaps: $('mymaps'), setModal: $('setModal'),
+      menu: $('menu'), pause: $('pause'), gameover: $('gameover'), matchend: $('matchend'), tips: $('tips'), market: $('market'), keys: $('keys'), net: $('net'), settings: $('settings'), mymaps: $('mymaps'), setModal: $('setModal'), achievements: $('achievements'),
       mapName: $('mapName'), records: $('records'), hatBtn: $('hatBtn'),
       goTitle: $('goTitle'), goStats: $('goStats'),
       meTitle: $('meTitle'), meStats: $('meStats'),
@@ -65,6 +65,13 @@ window.Menu = {
     };
     $('btnMarket').onclick = () => { AudioFX.click(); Market.show(); };
     $('btnMarketBack').onclick = () => { AudioFX.click(); Market.hide(); this.show('menu'); };
+    // 🏆 THÀNH TỰU & THỐNG KÊ — tiến độ từng mốc + số liệu tổng hợp
+    $('btnAchievements').onclick = () => {
+      AudioFX.click();
+      if (window.Achievements) Achievements.render();
+      this.show('achievements');
+    };
+    $('btnAchBack').onclick = () => { AudioFX.click(); this.show('menu'); };
     $('btnTips').onclick = () => { AudioFX.click(); this.show('tips'); };
     $('btnTipsBack').onclick = () => { AudioFX.click(); this.show('menu'); };
     // ⚙️ CÀI ĐẶT — mỗi mục 1 DÒNG, bấm mở hộp thoại riêng (✔ OK lưu · ✖ HUỶ bỏ)
@@ -530,13 +537,13 @@ window.Menu = {
     Market.hide(); KeySettings.hide(); // rời chợ / bảng phím nếu đang mở
     // đóng hộp thoại Cài Đặt nếu đang mở (đổi màn hình = bỏ chỉnh dở)
     if (this.el.setModal) this.el.setModal.classList.add('hidden');
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps'].forEach((id) => {
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps', 'achievements'].forEach((id) => {
       this.el[id].classList.toggle('hidden', id !== panel);
     });
   },
   hideAll() {
     if (this.el.setModal) this.el.setModal.classList.add('hidden');
-    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps'].forEach((id) => this.el[id].classList.add('hidden'));
+    ['menu', 'pause', 'gameover', 'matchend', 'tips', 'market', 'keys', 'net', 'settings', 'mymaps', 'achievements'].forEach((id) => this.el[id].classList.add('hidden'));
   },
 
   /* 🌐 màn hình LAN: cập nhật dòng trạng thái + hiện nút BẮT ĐẦU khi đủ 2 người */
@@ -565,6 +572,13 @@ window.Menu = {
       `Sống sót đến <b>Wave ${wave}</b> · <b>${score} điểm</b>` +
       (waveRecord ? '<br><span class="record">🌟 KỶ LỤC WAVE MỚI!</span>' : '') +
       (scoreRecord ? '<br><span class="record">🌟 KỶ LỤC ĐIỂM MỚI!</span>' : '');
+    // 📊 THỐNG KÊ CHI TIẾT + 🏆 thành tựu vừa mở trong trận
+    const detail = document.getElementById('goDetail');
+    if (detail) {
+      const snap = (window.Stats) ? Stats.finish() : null;
+      detail.innerHTML = (snap ? Stats.html(snap) : '') +
+        (window.Achievements ? Achievements.takePendingHtml() : '');
+    }
     // 🌐 co-op: chỉ máy CHỦ mới "đánh lại" được (máy 2 phải đợi host)
     const retry = document.getElementById('btnRetryWave');
     if (retry) retry.classList.toggle('hidden', window.Net && Net.mode === 'guest');
@@ -576,6 +590,13 @@ window.Menu = {
     this.el.meTitle.textContent = won ? '🏆 ĐỘI BẠN THẮNG!' : '☠️ THUA RỒI!';
     this.el.meTitle.className = won ? 'win-title' : 'lose-title';
     this.el.meStats.innerHTML = `Tỷ số cuối: <b>${a} — ${b}</b> (cần ${Config.DM.WIN_KILLS} kill)`;
+    // 📊 thống kê chi tiết trận đối đầu
+    const detail = document.getElementById('meDetail');
+    if (detail) {
+      const snap = (window.Stats) ? Stats.finish() : null;
+      detail.innerHTML = (snap ? Stats.html(snap) : '') +
+        (window.Achievements ? Achievements.takePendingHtml() : '');
+    }
     // 🌐 co-op/đối đầu: chỉ máy CHỦ mới "đánh lại" được (máy 2 phải đợi host)
     const rematch = document.getElementById('btnRematch');
     if (rematch) rematch.classList.toggle('hidden', window.Net && Net.mode === 'guest');

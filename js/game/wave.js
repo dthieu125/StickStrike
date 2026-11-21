@@ -237,6 +237,7 @@ window.Wave = {
   descOf(ev) { return ev ? ev.desc : ''; },
 
   onMonsterKilled(m) {
+    if (window.Stats) Stats.onKill(m); // 📊 hạ gục + boss (dùng lastHitBy của con quái)
     /* 🤝 co-op: tiền về túi AI BẮN CHẾT (bullet nhớ lastHitBy) — không có thì người gần nhất */
     let credit = (m.lastHitBy && m.lastHitBy.money != null && !(m.lastHitBy.dead))
       ? m.lastHitBy : Player.nearest(m.x + m.w / 2, m.y + m.h / 2);
@@ -393,6 +394,10 @@ window.Wave = {
             Particles.text(pl.x + pl.w / 2, pl.y - 6, '+' + bonus + '💰', '#ffe066', 13);
           }
           this.score += bonus;
+          // 🏆 BẤT BẠI: dọn tới Wave 10 mà chưa gục lần nào → tiến độ tăng dần
+          if (window.Stats && window.Achievements && Stats.deaths === 0) {
+            Achievements.best('flawless10', this.num);
+          }
           // vừa dọn wave BOSS → modifier HIẾM xuất hiện ở lần chọn kế
           this.bossCleared = this.num >= Config.WAVE.BOSS.FROM && this.num % Config.WAVE.BOSS.EVERY === 0;
           this.mods = {};   // modifier cũ hết hạn khi wave dọn sạch

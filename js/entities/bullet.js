@@ -32,6 +32,7 @@ window.Bullets = {
 
   /* Bắn 1 tia. Trả về { dmg, head, kill, x, y } */
   fireHitscan(x, y, angle, w, shooterTeam, owner) {
+    if (window.Stats) Stats.onShot(owner, w); // 📊 đếm phát bắn của NGƯỜI CHƠI
     const step = 5;
     const dx = Math.cos(angle) * step, dy = Math.sin(angle) * step;
     let cx = x, cy = y;
@@ -106,10 +107,13 @@ window.Bullets = {
     Trees.hitAt(endX, endY, w.damage); // tia dừng tại cây → cây hao mòn dần
     if (window.Props) Props.hitAt(endX, endY, w.damage); // 🛢️ vật thể phá được cũng hao mòn dần
     Particles.sparks(endX, endY, angle + Math.PI, 4, '#ffce54');
+    // 📊 1 phát trúng (tính 1 lần dù xuyên nhiều bia) — accuracy + damage + headshot
+    if (window.Stats && totalDmg > 0) Stats.onHit(owner, w, totalDmg, anyHead);
     return { dmg: totalDmg, head: anyHead, kill: killed, x: endX, y: endY };
   },
 
   fireProjectile(x, y, angle, w, shooterTeam, owner) {
+    if (window.Stats) Stats.onShot(owner, w); // 📊 đếm phát bắn (rocket/plasma)
     this.projectiles.push({
       x, y, angle, w, shooterTeam, owner,
       vx: Math.cos(angle) * w.projSpeed,
@@ -122,6 +126,7 @@ window.Bullets = {
   /* 💣 NÉM LỰU ĐẠN — văng có QUỸ ĐẠO CONG (trọng lực riêng nhẹ hơn người),
    * chạm đất/tường/quái/vật thể là nổ; trúng CẢ HAI BÊN (đội 'X' = trung lập). */
   throwGrenade(x, y, angle, dist, thrower) {
+    if (window.Stats) Stats.onShot(thrower, { id: 'grenade' }); // 📊 tính cả lựu đạn
     const G = Config.GRENADE;
     const sp = Math.max(G.THROW_MIN, Math.min(G.THROW_MAX, dist || 400));
     this.projectiles.push({
@@ -145,6 +150,7 @@ window.Bullets = {
    * • Nổ ngay DƯỚI sàn MỎNG (1 ô) mà nạn nhân đang đứng → trúng 75% máu tối đa
    *   (đạn không xuyên sàn nhưng rung sập sàn — đúng góp ý "bazoka phóng lựu") */
   explode(x, y, w, shooterTeam, owner) {
+    let appliedTotal = 0; // 📊 tổng sát thương vụ nổ gây ra cho NGƯỜI CHƠI này
     for (const c of Combatants.hostiles(shooterTeam)) {
       const tx = c.x + c.w / 2, ty = c.y + c.h / 2;
       const d = Math.hypot(tx - x, ty - y);
@@ -161,6 +167,7 @@ window.Bullets = {
             : Config.EXPLODE.THROUGH_WALL));
         }
         const applied = c.hit(dmg, false, tx, ty, shooterTeam, owner);
+        appliedTotal += (applied || 0);
         if (applied > 0) {
           Particles.text(tx, ty - 20, String(applied), '#ff9d5c', 14);
           if (c.bloodColor) {
@@ -171,6 +178,7 @@ window.Bullets = {
       }
     }
     Particles.explosion(x, y, w.explodeRadius);
+    if (window.Stats && appliedTotal > 0) Stats.onHit(owner, w, appliedTotal, false); // 📊 vụ nổ trúng địch
     Trees.explodeAt(x, y, w.explodeRadius); // vụ nổ quét qua → cây trong bán kính bay màu cả cây
     if (window.Props) Props.explodeAt(x, y, w.explodeRadius); // 🛢️ vật thể trong bán kính vỡ luôn (dãn nổ dây chuyền)
     Camera.addShake(w.shakeOnBoom || 6);

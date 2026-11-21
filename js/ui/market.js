@@ -26,6 +26,8 @@ window.Gold = {
     this.balance += n;
     this.earned += n;
     this.save();
+    if (window.Stats) Stats.onGold(n);                    // 📊 vàng kiếm trong trận
+    if (window.Achievements) Achievements.set('gold20k', this.earned); // 🏆 mốc 20,000
   },
   spend(n) {
     n = Math.round(n);

@@ -125,6 +125,7 @@ window.Props = {
   _break(p) {
     if (p.gone) return;
     p.gone = true;
+    if (window.Stats) Stats.onDestroy(); // 📊 đếm vật thể phá hủy (thành tựu Kẻ hủy diệt)
     const BOOM = Config.PROPS.BOOM;
     if (p.type === 'crate') {
       // 📦 vỡ: gỗ vụn + rơi vàng 20-35💰 → về túi NGƯỜI GẦN NHẤT còn sống (co-op)

@@ -43,13 +43,14 @@ window.Bots = {
       pers: this.PERSONALITIES[this.PICK[Math.floor(Math.random() * this.PICK.length)]],
       lastEnemyX: null, // ghi nhớ vị trí địch cuối — cho tính cách "Vòng sườn"
 
-      hit(dmg, isHead, hx, hy, shooterTeam) {
+      hit(dmg, isHead, hx, hy, shooterTeam, owner) {
         if (this.dead) return 0;
         this.hp -= dmg;
         this.flash = 0.12;
         if (this.hp <= 0) {
           this.dead = true;
           this.respawnT = Config.DM.RESPAWN;
+          if (window.Stats) Stats.onPlayerKill(owner); // 📊 đấu đội: NGƯỜI CHƠI hạ bot
           Particles.poof(this.x + this.w / 2, this.y + this.h / 2);
           // 🌐 mạng: bot chết trên máy host → máy guest cũng thấy khói bay
           if (window.Net && Net.mode === 'host') Net.fx({ k: 'poof', x: this.x + this.w / 2, y: this.y + this.h / 2 });

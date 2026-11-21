@@ -138,11 +138,30 @@ window.AudioFX = {
     this._noise(0.15, 900, 'bandpass', 0.2);
   },
 
-  hit(head) {
-    if (!this.canPlay('hit', 30)) return; // 🚦 trúng đạn liên tục 36/s → dồn còn ~33 tiếng/s là đủ
-    if (head) this._tone(620, 210, 0.08, 'square', 0.14);
-    else this._tone(330, 130, 0.06, 'square', 0.1);
-    this._noise(0.045, 2600, 'highpass', 0.09);
+  /* Âm thanh trúng đạn theo bề mặt (vật liệu) */
+  hitSurface(material) {
+    if (!this.canPlay('hitMat:' + material, 35)) return;
+    const v = 0.9 + Math.random() * 0.2;
+    switch (material) {
+      case 'metal': // tiếng keng đanh thép
+        this._tone(1200 * v, 600, 0.05, 'triangle', 0.15);
+        this._noise(0.04, 3000, 'highpass', 0.12);
+        break;
+      case 'wood': // tiếng gỗ nứt
+        this._tone(450 * v, 200, 0.06, 'square', 0.12);
+        this._noise(0.05, 1200, 'bandpass', 0.15);
+        break;
+      case 'flesh': default: // tiếng bẹt máu / thịt
+        this._tone(280 * v, 110, 0.06, 'sawtooth', 0.12);
+        this._noise(0.04, 1500, 'highpass', 0.1);
+        break;
+    }
+  },
+
+  /* Tiếng vỏ đạn nảy trên sàn */
+  shellDrop() {
+    if (!this.canPlay('shellDrop', 80)) return;
+    this._tone(1800 + Math.random() * 400, 900, 0.03, 'sine', 0.04);
   },
 
   kill() {

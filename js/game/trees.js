@@ -73,6 +73,7 @@ window.Trees = {
   hitAt(x, y, dmg) {
     const t = this._treeAt(x, y);
     if (!t || t.gone) return false;
+    AudioFX.hitSurface('wood'); // 🔊 tiếng gỗ nứt
     const wasStanding = t.hp > 0;
     t.hp = Math.max(0, t.hp - dmg);
     t.shake = 0.22;

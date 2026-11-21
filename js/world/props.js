@@ -100,6 +100,7 @@ window.Props = {
   hitAt(x, y, dmg) {
     const p = this._propAt(x, y);
     if (!p || p.gone) return false;
+    AudioFX.hitSurface(p.type === 'crate' ? 'wood' : 'metal'); // 🔊 tiếng trúng vật thể
     p.hp = Math.max(0, p.hp - dmg);
     p.shake = 0.22;
     const debris = p.type === 'crate' ? '#8a5a2b' : (p.type === 'barrel' ? '#b33a2b' : '#9db4c4');

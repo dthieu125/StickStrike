@@ -142,6 +142,7 @@ window.Particles = {
         // vỏ đạn chạm sàn thì nảy (kiểm tra ô map dưới chân)
         if (p.vy > 0 && Level.isSolid(Level.tileAt(Math.floor(p.x / T), Math.floor((p.y + 2) / T)))) {
           p.vy *= -0.42; p.vx *= 0.7; p.vrot *= 0.6;
+          AudioFX.shellDrop(); // 🔊 tiếng vỏ đạn nảy trên sàn
           if (Math.abs(p.vy) < 40) { p.vy = 0; p.vrot = 0; }
         }
       }

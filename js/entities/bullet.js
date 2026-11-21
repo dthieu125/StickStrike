@@ -19,6 +19,17 @@ window.Bullets = {
   },
   _rayId: 0,
 
+  /* ── 🔊 PHÂN LOẠI BỀ MẶT tại điểm (x,y) — quyết định TIẾNG TRÚNG ĐẠN ──
+   *  'metal' tường thép/bậc thềm · 'wood' thùng gỗ/cây · 'flesh' thịt người-quái */
+  surfaceAt(x, y) {
+    if (window.Trees && Trees.blocksShotAt(x, y)) return 'wood';
+    if (window.Props) {
+      const p = Props._propAt && Props._propAt(x, y);
+      if (p) return p.type === 'crate' ? 'wood' : 'metal'; // thùng gỗ = gỗ · thùng nổ/ống ga = thép
+    }
+    return 'metal'; // tường/bậc thềm của tàu = kim loại
+  },
+
   /* Bắn 1 tia. Trả về { dmg, head, kill, x, y } */
   fireHitscan(x, y, angle, w, shooterTeam, owner) {
     const step = 5;
@@ -51,6 +62,8 @@ window.Bullets = {
       // tường + bậc thềm đều chặn tia (bậc thềm không bắn xuyên được)
       if (Level.blocksShotAt(cx, cy)) {
         endX = cx; endY = cy;
+        // 🔊 tiếng trúng theo BỀ MẶT — nhưng cây/thùng prop để hitAt dưới lo (1 tiếng duy nhất)
+        if (this.surfaceAt(cx, cy) === 'metal') AudioFX.hitSurface('metal');
         break;
       }
       // trúng ai không?
@@ -66,6 +79,7 @@ window.Bullets = {
 
           totalDmg += applied;
           if (isHead) { anyHead = true; Time.hitstop(0.045); } // hitstop headshot!
+          if (applied > 0) AudioFX.hitSurface('flesh'); // 🔊 tiếng trúng THỊT (bẹt máu)
           if (applied > 0 && c.bloodColor) {
             Particles.blood(cx, cy, angle, isHead ? 12 : 6, c.bloodColor);
             Level.splatter(cx, cy, angle, isHead);
